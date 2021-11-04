@@ -1,0 +1,31 @@
+---ADDRESSES---
+
+- &addr2: 0xff9a0c3c                                -Local \on stack
+- &addr3: 0xff9a0c40                                -Local \on stack
+- foo: 0x565d66e0                                   -Text segment
+- &addr5: 0x565d8018                                -Static Heap BSS
+dist1: (size_t)&addr6 - (size_t)p: -4               -diff between two vars on BSS
+dist2: (size_t)&local - (size_t)p: -1455649836      -diff between BSS to Stack
+dist3: (size_t)&foo - (size_t)p:  -6456             -diff between Text segment to BSS
+- addr0: 0x565d8008                                 -Initialized Data segment
+- addr1: 0x565d8010                                 -BSS
+- &addr6: 0x565d8014                                -BSS
+- yos: 0x565d6880                                   -Text segment (read only memory)
+- addr4: 0x56fdc160                                 -Dynamic Heap
+- &addr4: 0xff9a0c44                                -Local \on stack
+
+---TASK1C---
+
+Memory address of 'iarray':0xffe3006c
+Memory address of 'iarray+1':0xffe30070
+dist1: (size_t)&(iarray+1) - (size_t)(iarray): 4
+Memory address of 'carray':0xffe30079
+Memory address of 'carray+1':0xffe3007a
+dist1: (size_t)&(carray+1) - (size_t)(carray): 1
+
+
+int iarray[3]                                       -3 Blocks of 4 Bytes each, total 12 Bytes
+char carray[3]                                      -3 Blocks of 1 Byte each, total 3 Bytes
+
+iarray+1 = (&iarray) + sizeof(int)*1                -int size is 4 byte
+carray+1 = (&carray) + sizeof(char)*1               -char size is 1 byte
