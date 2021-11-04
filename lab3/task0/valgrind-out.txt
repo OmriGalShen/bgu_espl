@@ -1,0 +1,84 @@
+==12671== Memcheck, a memory error detector
+==12671== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==12671== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==12671== Command: ./hexaPrint exampleFile
+==12671== Parent PID: 3657
+==12671== 
+--12671-- 
+--12671-- Valgrind options:
+--12671--    --leak-check=full
+--12671--    --show-leak-kinds=all
+--12671--    --track-origins=yes
+--12671--    --verbose
+--12671--    --log-file=valgrind-out.txt
+--12671-- Contents of /proc/version:
+--12671--   Linux version 4.15.0-20-generic (buildd@lgw01-amd64-039) (gcc version 7.3.0 (Ubuntu 7.3.0-16ubuntu3)) #21-Ubuntu SMP Tue Apr 24 06:16:15 UTC 2018
+--12671-- 
+--12671-- Arch and hwcaps: X86, LittleEndian, x86-mmxext-sse1-sse2-sse3-lzcnt
+--12671-- Page sizes: currently 4096, max supported 4096
+--12671-- Valgrind library directory: /usr/lib/valgrind
+--12671-- Reading syms from /home/caspl202/projects/bgu_espl/lab3/task0/hexaPrint
+--12671-- Reading syms from /lib/i386-linux-gnu/ld-2.27.so
+--12671--   Considering /lib/i386-linux-gnu/ld-2.27.so ..
+--12671--   .. CRC mismatch (computed 070ccee6 wanted e55629eb)
+--12671--   Considering /usr/lib/debug/lib/i386-linux-gnu/ld-2.27.so ..
+--12671--   .. CRC is valid
+--12671-- Reading syms from /usr/lib/valgrind/memcheck-x86-linux
+--12671--   Considering /usr/lib/valgrind/memcheck-x86-linux ..
+--12671--   .. CRC mismatch (computed a7281062 wanted 16af0e50)
+--12671--    object doesn't have a symbol table
+--12671--    object doesn't have a dynamic symbol table
+--12671-- Scheduler: using generic scheduler lock implementation.
+--12671-- Reading suppressions file: /usr/lib/valgrind/default.supp
+==12671== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-12671-by-caspl202-on-???
+==12671== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-12671-by-caspl202-on-???
+==12671== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-12671-by-caspl202-on-???
+==12671== 
+==12671== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==12671== don't want to do, unless you know exactly what you're doing,
+==12671== or are doing some strange experiment):
+==12671==   /usr/lib/valgrind/../../bin/vgdb --pid=12671 ...command...
+==12671== 
+==12671== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==12671==   /path/to/gdb ./hexaPrint
+==12671== and then give GDB the following command
+==12671==   target remote | /usr/lib/valgrind/../../bin/vgdb --pid=12671
+==12671== --pid is optional if only one valgrind process is running
+==12671== 
+--12671-- REDIR: 0x401b560 (ld-linux.so.2:strlen) redirected to 0x58055ad3 (???)
+--12671-- REDIR: 0x401b2c0 (ld-linux.so.2:index) redirected to 0x58055aae (???)
+--12671-- Reading syms from /usr/lib/valgrind/vgpreload_core-x86-linux.so
+--12671--   Considering /usr/lib/valgrind/vgpreload_core-x86-linux.so ..
+--12671--   .. CRC mismatch (computed 86c0c51e wanted baca1012)
+--12671--    object doesn't have a symbol table
+--12671-- Reading syms from /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so
+--12671--   Considering /usr/lib/valgrind/vgpreload_memcheck-x86-linux.so ..
+--12671--   .. CRC mismatch (computed 14c838a6 wanted 6f3b1ae1)
+--12671--    object doesn't have a symbol table
+==12671== WARNING: new redirection conflicts with existing -- ignoring it
+--12671--     old: 0x0401b560 (strlen              ) R-> (0000.0) 0x58055ad3 ???
+--12671--     new: 0x0401b560 (strlen              ) R-> (2007.0) 0x04833430 strlen
+--12671-- Reading syms from /lib/i386-linux-gnu/libc-2.27.so
+--12671--   Considering /lib/i386-linux-gnu/libc-2.27.so ..
+--12671--   .. CRC mismatch (computed 80e31c84 wanted 2f341772)
+--12671--   Considering /usr/lib/debug/lib/i386-linux-gnu/libc-2.27.so ..
+--12671--   .. CRC is valid
+--12671-- REDIR: 0x48d4b00 (libc.so.6:strncasecmp) redirected to 0x482a560 (_vgnU_ifunc_wrapper)
+--12671-- REDIR: 0x48daf80 (libc.so.6:memrchr) redirected to 0x482a560 (_vgnU_ifunc_wrapper)
+--12671-- REDIR: 0x48eeb30 (libc.so.6:wcslen) redirected to 0x482a560 (_vgnU_ifunc_wrapper)
+--12671-- REDIR: 0x48edd10 (libc.so.6:__GI_strrchr) redirected to 0x4832de0 (__GI_strrchr)
+--12671-- REDIR: 0x48cfed0 (libc.so.6:malloc) redirected to 0x48301b0 (malloc)
+--12671-- REDIR: 0x48d4400 (libc.so.6:strstr) redirected to 0x4837fa0 (strstr)
+--12671-- REDIR: 0x48d0500 (libc.so.6:free) redirected to 0x4831370 (free)
+--12671-- REDIR: 0x48ed820 (libc.so.6:__GI_memcpy) redirected to 0x4835180 (__GI_memcpy)
+--12671-- REDIR: 0x48d6520 (libc.so.6:strchrnul) redirected to 0x4837900 (strchrnul)
+--12671-- REDIR: 0x48ed910 (libc.so.6:__GI_mempcpy) redirected to 0x4837b30 (__GI_mempcpy)
+==12671== 
+==12671== HEAP SUMMARY:
+==12671==     in use at exit: 0 bytes in 0 blocks
+==12671==   total heap usage: 4 allocs, 4 frees, 5,477 bytes allocated
+==12671== 
+==12671== All heap blocks were freed -- no leaks are possible
+==12671== 
+==12671== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==12671== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
