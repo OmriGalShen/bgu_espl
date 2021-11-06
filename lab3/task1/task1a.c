@@ -18,8 +18,10 @@ struct node {
 Each item followed by a newline character. */
 void list_print(node *diff_list, FILE *output) {
     node *curr = diff_list;
+    diff *data;
     while (curr != NULL) {
-        fprintf(output, "byte %u %u\n", curr->diff_data->orig_value, curr->diff_data->new_value);
+        data = curr->diff_data;
+        fprintf(output, "byte %ld %X %X\n",data->offset, data->orig_value, data->new_value);
         curr = curr->next;
     }
 }
