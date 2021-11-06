@@ -59,11 +59,10 @@ unsigned char *read_file(FILE *fp, size_t *result) {
     return buffer;
 }
 
-void task1b(FILE *first_input, FILE *second_input, FILE *output_file) {
-    size_t result1, result2;
+struct node *diff_list(FILE *first_input, FILE *second_input) {
+    size_t result1, result2; /*successfully read characters*/
     unsigned char *buffer1 = read_file(first_input, &result1); /* on heap*/
     unsigned char *buffer2 = read_file(second_input, &result2); /* on heap*/
-
     size_t length = (result1 < result2) ? result1 : result2; /* minimum of the two*/
     struct node *list = NULL;
     long i;
@@ -80,33 +79,21 @@ void task1b(FILE *first_input, FILE *second_input, FILE *output_file) {
             list = list_append(list, data);
         }
     }
-    list_print(list, output_file);
-    list_free(list);
     if (buffer1) free(buffer1);
     if (buffer2) free(buffer2);
-}
-
-void safe_close(FILE *fp) {
-    if (fp)
-        fclose(fp);
+    return list;
 }
 
 int main(int argc, char **argv) {
     FILE *first_input = NULL;
     FILE *second_input = NULL;
     FILE *output_file = stdout;
-    char t_flag = 0, input_flag = 0; /* flags*/
-    int k = -1,i;
-    for (i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-k") == 0) k = atoi(argv[++i]);
-        else if (strcmp(argv[i], "-t") == 0) t_flag = 1;
-        else if (strcmp(argv[i], "-o") == 0) output_file = fopen(argv[++i], "w");
-        else if (!input_flag) {
-            first_input = fopen(argv[i], "rb"); /*read first input file*/
-            input_flag = 1;
-        } else second_input = fopen(argv[i], "rb"); /*read second input file*/
-    }
-    task1b(first_input, second_input, output_file);
+    first_input = fopen(argv[1], "rb"); /*read first input file*/
+    second_input = fopen(argv[2], "rb"); /*read second input file*/
+    struct node *list = diff_list(first_input, second_input);
+    list_print(list, output_file);
+    /* cleaning */
+    list_free(list);
     if (first_input)fclose(first_input);
     if (second_input)fclose(second_input);
     if (output_file != stdout)fclose(output_file);
