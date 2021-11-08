@@ -18,8 +18,10 @@ struct node {
 Each item followed by a newline character. */
 void list_print(node *diff_list, FILE *output) {
     node *curr = diff_list;
+    diff *data;
     while (curr != NULL) {
-        fprintf(output, "byte %u %u\n", curr->diff_data->orig_value, curr->diff_data->new_value);
+        data = curr->diff_data;
+        fprintf(output, "byte %ld %X %X\n",data->offset, data->orig_value, data->new_value);
         curr = curr->next;
     }
 }
@@ -49,9 +51,15 @@ int main(int argc, char **argv) {
     diff *data1 = calloc(1, sizeof(diff));
     diff *data2 = calloc(1, sizeof(diff));
     diff *data3 = calloc(1, sizeof(diff));
-    data1->new_value = 1;
-    data2->new_value = 2;
-    data3->new_value = 3;
+    data1->orig_value = 0xA1;
+    data1->new_value = 0xFF;
+    data1->offset = 1;
+    data2->orig_value = 0xA2;
+    data2->new_value = 0xFF;
+    data2->offset = 2;
+    data3->orig_value = 0xA3;
+    data3->new_value = 0xFF;
+    data3->offset = 3;
     struct node *list = NULL;
     list = list_append(list,data1);
     list = list_append(list,data2);
