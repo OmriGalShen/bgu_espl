@@ -1,0 +1,7 @@
+How many parameters does this function have?
+
+What does this function return?
+
+How many local variables are used by this function?
+
+Is there a function in the C standard library which is the counterpart of this function?
