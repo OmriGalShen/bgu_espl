@@ -1,4 +1,4 @@
-exec: task1a.o
+all: task1a.o
 	gcc -g -m32 -Wall -ansi -o bcmp task1a.o
 
 task1a.o: task1a.c
