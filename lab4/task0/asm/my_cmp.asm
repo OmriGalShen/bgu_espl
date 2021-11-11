@@ -11,7 +11,8 @@ get_arguments:
 	movzx ebx, BYTE [ebp+16] ;retrieves the second function argument, READ about MOVZX
 
 compare:
-	; TODO: complete this part
+	cmp ebx, eax; TODO: complete this part
+	jg S_BIG
 	
 F_BIG:
 	mov eax, 1 ;return value need to be stored in eax register
