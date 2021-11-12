@@ -1,7 +1,12 @@
 How many parameters does this function have?
 
+One parameter, we will call it a
+
 What does this function return?
+256-(a%256)
 
 How many local variables are used by this function?
+zero 
 
 Is there a function in the C standard library which is the counterpart of this function?
+
