@@ -1,6 +1,11 @@
 int cmpstr(char *s1, char *s2)
 {
-    int a = *s1;
-    int b = *s2;
-    return a-b;
+    int res=0;
+    while(*(s1++) != '\0'&& *(s2++) != '\0')
+    {
+        res = (*s1)-(*s2);
+        if(res!=0)
+            return res; 
+    }
+    return res;
 }
