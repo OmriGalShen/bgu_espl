@@ -1,12 +1,16 @@
-How many parameters does this function have?
+Q: How many parameters does this function have?
 
-One parameter, we will call it a
+A: One parameter of type char* 
 
-What does this function return?
-256-(a%256)
+Q: What does this function return?
 
-How many local variables are used by this function?
-zero 
+A: length of the string
 
-Is there a function in the C standard library which is the counterpart of this function?
+Q: How many local variables are used by this function?
+
+A: zero 
+
+Q: Is there a function in the C standard library which is the counterpart of this function?
+
+A: Yes, strlen 
 
