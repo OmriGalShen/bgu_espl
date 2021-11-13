@@ -22,12 +22,9 @@ count_loop:
     cmp [ebx], BYTE 0; end of string
     je print_res; print result
     cmp [ebx], BYTE X; current char is x
-    je found_char
-    inc ebx; next char
-    jmp count_loop
-
-found_char:
-    inc eax; eax++
+    jne no_match
+    inc eax
+ no_match:
     inc ebx; next char
     jmp count_loop
 
