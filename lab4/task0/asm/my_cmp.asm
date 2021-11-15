@@ -11,7 +11,7 @@ get_arguments:
 	movzx ebx, BYTE [ebp+16] ;retrieves the second function argument, READ about MOVZX
 
 compare:
-	cmp ebx, eax; TODO: complete this part
+	cmp ebx, eax; TODO: finish this course successfully  
 	jg S_BIG
 	
 F_BIG:

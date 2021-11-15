@@ -10,4 +10,4 @@ funcA.o: funcA.asm
 		nasm -g -f elf -w+all -o funcA.o funcA.asm
 
 clean:
-	rm -rf *.o task0
+	rm -rf *.o task1

@@ -16,5 +16,5 @@ funcA:
 	jne .L2; loop until bl=0
 	mov esp, ebp
 	pop ebx; restore previous ebx
-	pop ebp; restore previous ebp
+	pop ebp; restore previous ebp 
 	ret ; finished with eax = i s.t first byte of a + i = 0

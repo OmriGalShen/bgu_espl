@@ -1,5 +1,5 @@
-%define X 'A'
-%define STR string1
+%define X 'B'
+%define STR string5
 
 section .rodata
     print_format db '"%c" appears in "%s" %d times', 10, 0
@@ -7,7 +7,7 @@ section .rodata
     string2 db 'BBA', 0
     string3 db 'BB', 0
     string4 db '', 0
-    string5 db 'SSAASSS', 0
+    string5 db 'ABBABBBA', 0
 
 section .text
     global _start

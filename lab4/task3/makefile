@@ -9,4 +9,4 @@ task3.o: task3.s
 .PHONY: clean
 
 clean:
-	rm -rf *.o scmp1
+	rm -rf *.o task3

@@ -1,4 +1,4 @@
-all: scmp2
+all: scmp1 scmp2
 
 scmp1: scmp.o cmpstr1.o
 	gcc -m32 -o scmp1 cmpstr1.o scmp.o
@@ -18,4 +18,4 @@ cmpstr2.o: cmpstr.s
 .PHONY: clean
 
 clean:
-	rm -rf *.o scmp1
+	rm -rf *.o scmp1 scmp2
