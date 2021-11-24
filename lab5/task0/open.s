@@ -1,24 +1,16 @@
 section .text
-	global open
+	global open; int open(const char *path, int oflag);
 
 open:
 	push ebp ;stack maintenance
 	push ebx
 	mov ebp, esp ;stack maintenance
 	
-get_arguments:
-	mov eax, BYTE [ebp+12]
-
-compare:
-	cmp ebx, eax; TODO: finish this course successfully  
-	jg S_BIG
-	
-F_BIG:
-	mov eax, 1 ;return value need to be stored in eax register
-	jmp FINISH
-	
-S_BIG:
-	mov eax, 2 ;return value need to be stored in eax register
+sys_open:
+	mov eax, 5; sys_open
+	mov ebx, [ebp+12]; const char *path
+	mov ecx, [ebp+16];  int oflag
+	int 80h
 	
 FINISH:
 	mov esp, ebp ;stack maintenance
