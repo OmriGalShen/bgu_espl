@@ -39,7 +39,6 @@ write:
 	push ebp ;stack maintenance
 	push ebx
 	mov ebp, esp ;stack maintenance
-	
 	mov eax,4; sys_write
 	mov ebx, [ebp+12]; int fd
 	mov ecx, [ebp+16]; char *buf
@@ -74,11 +73,11 @@ strlen:
 	push ebp ;stack maintenance
 	push ebx
 	mov ebp, esp ;stack maintenance
-	
 	mov eax, 0
-	mov ebx, [ebp+12]; int fd
+	mov ebx, [ebp+12]; char *s
+strlen_loop:
 	cmp [ebx], BYTE 0
 	je return_main
 	inc eax
 	inc ebx
-	jmp strlen
+	jmp strlen_loop
