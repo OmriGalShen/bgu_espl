@@ -9,8 +9,11 @@ global strlen; int strlen(char *s);
 
 extern main; int main(int argc, char **argv)
 _start:
-	push DWORD [esp]; int argc 
-	push DWORD [esp+4]; char **argv
+	mov ebx,dword [esp]
+	mov ecx, esp
+	add ecx, 4
+	push ecx; char **argv
+	push ebx; int argc 
 	call	main
     mov     ebx,eax
 	mov	eax,1
@@ -30,7 +33,7 @@ read:
 	mov eax,3; sys_read
 	mov ebx, [ebp+12]; int fd
 	mov ecx, [ebp+16]; char *buf
-	mov edx, [ebp+20]; int size
+	mov edx, [ebp+20]; int sizeSS
 	int 80h
 	jmp return_main
 
