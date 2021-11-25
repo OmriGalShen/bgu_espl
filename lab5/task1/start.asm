@@ -9,7 +9,6 @@ global strlen; int strlen(char *s);
 
 extern main; int main(int argc, char **argv)
 _start:
-	;TODO: handles command line input parameters
 	push DWORD [esp]; int argc 
 	push DWORD [esp+4]; char **argv
 	call	main
@@ -17,22 +16,23 @@ _start:
 	mov	eax,1
 	int 0x80
 
+return_main:
+	mov esp, ebp ;stack maintenance
+	pop ebx
+	pop ebp ;stack maintenance
+	ret ;stack maintenance
+
 ; int read(int fd, char *buf, int size);
 read:
 	push ebp ;stack maintenance
 	push ebx
 	mov ebp, esp ;stack maintenance
-	
 	mov eax,3; sys_read
 	mov ebx, [ebp+12]; int fd
 	mov ecx, [ebp+16]; char *buf
 	mov edx, [ebp+20]; int size
 	int 80h
-
-	mov esp, ebp ;stack maintenance
-	pop ebx
-	pop ebp ;stack maintenance
-	ret
+	jmp return_main
 
 ; int write(int fd, char *buf, int size);
 write:
@@ -45,27 +45,18 @@ write:
 	mov ecx, [ebp+16]; char *buf
 	mov edx, [ebp+20]; int size
 	int 80h
-
-	mov esp, ebp ;stack maintenance
-	pop ebx
-	pop ebp ;stack maintenance
-	ret
+	jmp return_main
 
 ; int open(char *name, int flags);
 open:
 	push ebp ;stack maintenance
 	push ebx
 	mov ebp, esp ;stack maintenance
-	
 	mov eax,5; sys_open
 	mov ebx, [ebp+12]; char *name
 	mov ecx, [ebp+16]; int flags
 	int 80h
-
-	mov esp, ebp ;stack maintenance
-	pop ebx
-	pop ebp ;stack maintenance
-	ret
+	jmp return_main
 
 ; int close(int fd);
 close:
@@ -76,11 +67,7 @@ close:
 	mov eax,6; sys_close
 	mov ebx, [ebp+12]; int fd
 	int 80h
-
-	mov esp, ebp ;stack maintenance
-	pop ebx
-	pop ebp ;stack maintenance
-	ret
+	jmp return_main
 
 ; int strlen(char *s);	
 strlen:
@@ -91,13 +78,7 @@ strlen:
 	mov eax, 0
 	mov ebx, [ebp+12]; int fd
 	cmp [ebx], BYTE 0
-	je done_strlen
+	je return_main
 	inc eax
 	inc ebx
 	jmp strlen
-
-done_strlen: 
-	mov esp, ebp ;stack maintenance
-	pop ebx
-	pop ebp ;stack maintenance
-	ret
