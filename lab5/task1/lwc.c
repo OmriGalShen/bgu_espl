@@ -4,6 +4,8 @@ int read(int fd, char *buf, int size);
 int write(int fd, char *buf, int size);
 int strlen(char *s);
 
+char *utoa_s(int i); // task1b
+
 #define EUSAGE	"usage: lwc [filename]\n"
 #define EARGC	"error: wrong number of arguments\n"
 #define ENOFILE "error: cannot open file\n"
@@ -66,9 +68,17 @@ int main(int argc, char **argv) {
 	if(inp)               /* close descriptor if opened by the program */
 		close(inp);
 
-	print(utoa(nlines)); print(" lines\n");
-	print(utoa(nwords)); print(" words\n");
-	print(utoa(nchars)); print(" chars\n");
+	// before task1b:
+	
+	// print(utoa(nlines)); print(" lines\n");
+	// print(utoa(nwords)); print(" words\n");
+	// print(utoa(nchars)); print(" chars\n");
+
+	// after task1b:
+	
+	print(utoa_s(nlines)); print(" lines\n");
+	print(utoa_s(nwords)); print(" words\n");
+	print(utoa_s(nchars)); print(" chars\n");
 
 	return 0;
 
