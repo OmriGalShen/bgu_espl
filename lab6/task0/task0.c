@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "LineParser.h"
 
 #define MAX_READ 1<<11
@@ -17,11 +18,10 @@ int main()
     printf("%s> ",abs_path_name);
     char user_input[MAX_READ];
     fgets(user_input, MAX_READ,stdin);
-    if(strncmp(user_input,"quit"))
+    
+    if(strcmp(user_input,"quit")==0)
         break;
-    
     cmdLine* command = parseCmdLines(user_input);
-    
     
     printf("%s\n",command->arguments[0]);
     }
