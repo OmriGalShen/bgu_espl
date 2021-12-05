@@ -15,6 +15,10 @@ val: myshell
          --track-origins=yes \
          ./myshell
 
+run: myshell
+	clear
+	./myshell
+
 .PHONY: clean
 
 clean:
