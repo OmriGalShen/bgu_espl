@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <limits.h>
 #include "LineParser.h"
 
 #define MAX_READ 1<<11
@@ -14,15 +15,14 @@ int currHistoryInd = 0;
 
 void execute(cmdLine *pCmdLine);
 
-void updatePath();
-
 void add_history(cmdLine *pCmdLine);
 
 void freeHistory();
 
 int main() {
+    char path_buff[PATH_MAX];
     while (TRUE) {
-        updatePath(); // update to current absolute path
+        abs_path_name = getcwd(path_buff, sizeof(path_buff)); // update to current absolute path
         printf("%s> ", abs_path_name); //prints path
 
         // Read user input
@@ -39,12 +39,6 @@ int main() {
     }
     freeHistory();
     return 0;
-}
-
-void updatePath() {
-    long max_path_len = pathconf(".", _PC_PATH_MAX);
-    char buff[max_path_len];
-    abs_path_name = getcwd(buff, (size_t) max_path_len);
 }
 
 void execute(cmdLine *pCmdLine) {
