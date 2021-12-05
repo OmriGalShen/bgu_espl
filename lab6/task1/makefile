@@ -9,6 +9,12 @@ LineParser.o: LineParser.c LineParser.h
 task1.o: task1.c
 	gcc -m32 -c -o task1.o task1.c
 
+val: myshell
+	valgrind --leak-check=full \
+         --show-leak-kinds=all \
+         --track-origins=yes \
+         ./myshell
+
 .PHONY: clean
 
 clean:
