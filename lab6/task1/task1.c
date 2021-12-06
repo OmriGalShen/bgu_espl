@@ -21,19 +21,19 @@ void freeHistory();
 
 int main() {
     char path_buff[PATH_MAX];
+    
     while (TRUE) {
         abs_path_name = getcwd(path_buff, sizeof(path_buff)); // update to current absolute path
-        printf("%s> ", abs_path_name); //prints path
+        printf("MyShell:~%s$ ", abs_path_name); //prints path
 
         // Read user input
-        char user_input[MAX_READ];
+        char user_input[MAX_READ];  
         fgets(user_input, MAX_READ, stdin);
-        user_input[strcspn(user_input, "\n")] = 0; // Removing trailing newline
+        cmdLine *command = parseCmdLines(user_input);
 
-        if (strcmp(user_input, "quit") == 0) // exit condition
+        if (strcmp(command->arguments[0], "quit") == 0) // exit condition
             break;
 
-        cmdLine *command = parseCmdLines(user_input);
         execute(command);
         add_history(command);
     }
