@@ -1,10 +1,10 @@
 all: exec
 
-exec: task2.o LineParser.o
-	gcc -g -Wall -o myshell task2.o LineParser.o
+exec: task1.o LineParser.o
+	gcc -g -Wall -o myshell task1.o LineParser.o
 
-task2.o: task2.c
-	gcc -g -Wall -c -o task2.o task2.c
+task1.o: task1.c
+	gcc -g -Wall -c -o task1.o task1.c
 
 LineParser.o: LineParser.c
 	gcc -g -Wall -c -o LineParser.o LineParser.c
@@ -14,11 +14,11 @@ LineParser.o: LineParser.c
 clean:
 	rm -rf *.o myshell
 
-run:
+run: myshell
 	clear
 	./myshell
 
-val: 
+val: myshell
 	clear
 	valgrind --leak-check=full \
          --show-leak-kinds=all \
