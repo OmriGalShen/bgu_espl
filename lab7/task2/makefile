@@ -12,8 +12,10 @@ clean:
 	rm -rf *.o myshell
 
 run: mypipeline
-	clear
 	./mypipeline
+
+debug: mypipeline
+	./mypipeline -d
 
 val: mypipeline
 	clear
