@@ -17,8 +17,8 @@
 // -----------------------
 
 // ---  global variables ----
-cmdLine *secCmd;             //lab7
-cmdLine *mainCmd;            //lab6
+cmdLine *secCmd;             // lab7
+cmdLine *mainCmd;            // lab6
 pid_t pid;                   // lab6
 char *h_array[HISTORY_SIZE]; // lab6 - History list of commands
 int h_count = 0;             // lab6 - Number of total commands
@@ -26,14 +26,14 @@ int h_pointer = 0;           // lab6 - Current command index in history list
 // -----------------------
 
 // functions declarions
-void general_command(cmdLine *pCmdLine);                      //lab7
-void redirect_io(cmdLine *pCmdLine);                          //lab7
-void general_command_pipe(cmdLine *mainCmd, cmdLine *secCmd); //lab7
-int execute(cmdLine *mainCmd, cmdLine *secCmd, char pipe_f);  //lab7
-void free_history();                                          //lab6
-void add_history(char *cmd_str);                              //lab6
-int restore_history(cmdLine *pCmdLine);                       //lab6
-void print_history();                                         //lab6
+void general_command(cmdLine *pCmdLine);                         //lab7
+void redirect_io(cmdLine *pCmdLine);                             //lab7
+void general_command_pipe(cmdLine *first_cmd, cmdLine *sec_cmd); //lab7
+int execute(cmdLine *first_cmd, cmdLine *sec_cmd, char pipe_f);  //lab7
+int restore_history(cmdLine *pCmdLine);                          //lab7
+void free_history();                                             //lab6
+void add_history(char *cmd_str);                                 //lab6
+void print_history();                                            //lab6
 // -----------------------
 
 int main(int argc, char **argv) //lab7
@@ -59,42 +59,43 @@ int main(int argc, char **argv) //lab7
         if (strlen(input) == 0) // redundant input
             continue;
 
+        char *all_input = strdup(input);        //lab7
         char *first_input = strtok(input, "|"); //lab7
         char *sec_input = strtok(NULL, "|");    //lab7
         pipe_f = (sec_input) ? 1 : 0;           //lab7
 
-        mainCmd = parseCmdLines(first_input);
+        mainCmd = parseCmdLines(first_input); //lab7
         if (pipe_f)
             secCmd = parseCmdLines(sec_input);                      //lab7
         int need_history_change = execute(mainCmd, secCmd, pipe_f); //lab7
         if (need_history_change)                                    // not special case !X -> add to history
-            add_history(input);
+            add_history(all_input);
         freeCmdLines(mainCmd);
-        if (pipe_f)
-            freeCmdLines(secCmd);
+        if (pipe_f)               //lab7
+            freeCmdLines(secCmd); //lab7
     }
     return 0;
 }
 
-int execute(cmdLine *mainCmd, cmdLine *secCmd, char pipe_f) //lab7
+int execute(cmdLine *first_cmd, cmdLine *sec_cmd, char pipe_f) //lab7
 {
     // check if first char of first argument is '!'
-    if (mainCmd->arguments[0][0] == 33)
+    if (first_cmd->arguments[0][0] == 33)
     {
-        return restore_history(mainCmd);
+        return restore_history(first_cmd);
     }
 
     // cd function
-    if (strcmp(mainCmd->arguments[0], "cd") == 0)
+    if (strcmp(first_cmd->arguments[0], "cd") == 0)
     {
         char err = 1;
-        if (mainCmd->argCount == 1)
+        if (first_cmd->argCount == 1)
         {
             err = chdir(getenv("HOME"));
         }
-        else if (mainCmd->argCount == 2)
+        else if (first_cmd->argCount == 2)
         {
-            err = chdir(mainCmd->arguments[1]);
+            err = chdir(first_cmd->arguments[1]);
         }
         if (err)
             fprintf(stderr, "ERROR: Unknown direcrtory\n");
@@ -102,19 +103,73 @@ int execute(cmdLine *mainCmd, cmdLine *secCmd, char pipe_f) //lab7
     }
 
     // history function
-    if (strcmp(mainCmd->arguments[0], "history") == 0)
+    if (strcmp(first_cmd->arguments[0], "history") == 0)
     {
         print_history();
         return ADD_HISTORY;
     }
-    if (pipe_f) //lab7
-        general_command_pipe(mainCmd, secCmd);
+    if (pipe_f)                                   //lab7
+        general_command_pipe(first_cmd, sec_cmd); //lab7
     else
-        general_command(mainCmd);
+        general_command(first_cmd); // lab6
     return ADD_HISTORY;
 }
 
-void general_command_pipe(cmdLine *mainCmd, cmdLine *secCmd) //lab7
+int restore_history(cmdLine *pCmdLine) // lab7
+{
+    int restored_command_index = atoi(pCmdLine->arguments[0] + sizeof(char));
+
+    if (restored_command_index == 0 && strcmp(pCmdLine->arguments[0], "!0") != 0)
+    {
+        fprintf(stderr, "ERROR: didn't recognized valid number as input. try again.\n");
+        return ADD_HISTORY;
+    }
+
+    if (restored_command_index >= h_count || restored_command_index < h_count - HISTORY_SIZE)
+    {
+        fprintf(stderr, "ERROR: history command number '%d' not found. Use 'history' command for valid options.\n", restored_command_index);
+        return ADD_HISTORY;
+    }
+
+    int real_array_index = restored_command_index % HISTORY_SIZE;
+    char *cmd_str = h_array[real_array_index]; //lab7
+
+    char *all_input = strdup(cmd_str);        //lab7
+    char *first_input = strtok(cmd_str, "|"); //lab7
+    char *sec_input = strtok(NULL, "|");      //lab7
+    char pipe_f = (sec_input) ? 1 : 0;        //lab7
+    cmdLine *first_cmd = NULL;                //lab7
+    cmdLine *sec_cmd = NULL;                  //lab7
+
+    first_cmd = parseCmdLines(first_input); //lab7
+    if (pipe_f)                             //lab7
+        secCmd = parseCmdLines(sec_input);  //lab7
+    execute(first_cmd, sec_cmd, pipe_f);    //lab7
+    freeCmdLines(first_cmd);                //lab7
+    freeCmdLines(sec_cmd);                  //lab7
+
+    /*  For edge case when '!X' command will enter the same
+            entry in h_array as the called command, omit adding. */
+    if (real_array_index != h_pointer)
+    {
+        /*  Add the true function that was intended and not
+                the '!X' command.
+                That way, if you call a restored function that
+                not in the array anymore, it won't fail. */
+        add_history(all_input);
+    }
+    else
+    {
+        h_pointer++;
+        h_pointer %= HISTORY_SIZE;
+        h_count++;
+    }
+
+    // don't add the '!X' command
+    return DONT_ADD_HISTORY;
+}
+
+void general_command_pipe(cmdLine *first_cmd, cmdLine *sec_cmd) //lab7
 {
     int file_dec[2];
     pid_t child1_pid, child2_pid;
@@ -131,11 +186,16 @@ void general_command_pipe(cmdLine *mainCmd, cmdLine *secCmd) //lab7
     }
     if (child1_pid == 0) // STEP 3 - child 1 - output ls -l to pipe
     {
-        close(1);                                          // Close the standard output.
-        dup(file_dec[1]);                                  // Duplicate the write-end of the pipe
-        close(file_dec[1]);                                // Close the file descriptor that was duplicated
-        execvp(mainCmd->arguments[0], mainCmd->arguments); // Execute "ls -l".
-        _exit(0);                                          // returns if failed
+        close(1);                                              // Close the standard output.
+        dup(file_dec[1]);                                      // Duplicate the write-end of the pipe
+        close(file_dec[1]);                                    // Close the file descriptor that was duplicated
+        execvp(first_cmd->arguments[0], first_cmd->arguments); // Execute "ls -l".
+        // free all memory and exit
+        free_history();
+        freeCmdLines(first_cmd);
+        if (mainCmd != first_cmd) // free original !X call
+            freeCmdLines(mainCmd);
+        _exit(0);
     }
     else // parent
     {
@@ -148,10 +208,16 @@ void general_command_pipe(cmdLine *mainCmd, cmdLine *secCmd) //lab7
         }
         if (child2_pid == 0) // STEP 6 - child 2 - get input for pipe and perform tail
         {
-            close(0);                                        // Child close the standard input.
-            dup(file_dec[0]);                                // Duplicate the read-end of the pipe
-            close(file_dec[0]);                              // Close the file descriptor that was duplicated
-            execvp(secCmd->arguments[0], secCmd->arguments); // Execute "tail -n 2".
+            close(0);                                          // Child close the standard input.
+            dup(file_dec[0]);                                  // Duplicate the read-end of the pipe
+            close(file_dec[0]);                                // Close the file descriptor that was duplicated
+            execvp(sec_cmd->arguments[0], sec_cmd->arguments); // Execute "tail -n 2".
+                                                               // free all memory and exit
+            free_history();
+            freeCmdLines(first_cmd);
+            freeCmdLines(sec_cmd);
+            if (mainCmd != first_cmd) // free original !X call
+                freeCmdLines(mainCmd);
             _exit(0);
         }
         else //parent
@@ -250,48 +316,4 @@ void print_history() // lab6
         h_curr_pointer %= HISTORY_SIZE;
         h_command_index++;
     }
-}
-
-int restore_history(cmdLine *pCmdLine) // lab6
-{
-    int restored_command_index = atoi(pCmdLine->arguments[0] + sizeof(char));
-
-    if (restored_command_index == 0 && strcmp(pCmdLine->arguments[0], "!0") != 0)
-    {
-        fprintf(stderr, "ERROR: didn't recognized valid number as input. try again.\n");
-        return ADD_HISTORY;
-    }
-
-    if (restored_command_index >= h_count || restored_command_index < h_count - HISTORY_SIZE)
-    {
-        fprintf(stderr, "ERROR: history command number '%d' not found. Use 'history' command for valid options.\n", restored_command_index);
-        return ADD_HISTORY;
-    }
-
-    int real_array_index = restored_command_index % HISTORY_SIZE;
-    char *cmd_str = h_array[real_array_index];
-
-    cmdLine *cmd = parseCmdLines(cmd_str);
-    execute(cmd, NULL, FALSE);
-    freeCmdLines(cmd);
-
-    /*  For edge case when '!X' command will enter the same
-            entry in h_array as the called command, omit adding. */
-    if (real_array_index != h_pointer)
-    {
-        /*  Add the true function that was intended and not
-                the '!X' command.
-                That way, if you call a restored function that
-                not in the array anymore, it won't fail. */
-        add_history(cmd_str);
-    }
-    else
-    {
-        h_pointer++;
-        h_pointer %= HISTORY_SIZE;
-        h_count++;
-    }
-
-    // don't add the '!X' command
-    return DONT_ADD_HISTORY;
 }
