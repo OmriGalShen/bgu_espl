@@ -1,6 +1,6 @@
-all: exec
+all: myshell
 
-exec: task1.o LineParser.o
+myshell: task1.o LineParser.o
 	gcc -g -Wall -o myshell task1.o LineParser.o
 
 task1.o: task1.c
