@@ -7,36 +7,39 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-// --- defines - lab 6 ---
-#define HISTORY_SIZE 5
-#define MAX_READ 2048
-#define TRUE 1
-#define ADD_HISTORY 1
-#define DONT_ADD_HISTORY 0
+// ------- defines  --------
+#define HISTORY_SIZE 5     // lab6
+#define MAX_READ 2048      // lab6
+#define TRUE 1             // lab6
+#define FALSE 0            // lab6
+#define ADD_HISTORY 1      // lab6
+#define DONT_ADD_HISTORY 0 // lab6
 // -----------------------
 
-// global variables - lab 6
-pid_t pid;
-cmdLine *mainCmd;
-char *h_array[HISTORY_SIZE]; // History list of commands
-int h_count = 0;             // Number of total commands
-int h_pointer = 0;           // Current command index in history list
+// ---  global variables ----
+cmdLine *secCmd;             //lab7
+cmdLine *mainCmd;            //lab6
+pid_t pid;                   // lab6
+char *h_array[HISTORY_SIZE]; // lab6 - History list of commands
+int h_count = 0;             // lab6 - Number of total commands
+int h_pointer = 0;           // lab6 - Current command index in history list
 // -----------------------
 
 // functions declarions
-void general_command(cmdLine *pCmdLine); //lab7
-void redirect_io(cmdLine *pCmdLine);     //lab7
-void general_command(cmdLine *pCmdLine); //lab7
-int execute(cmdLine *pCmdLine);          //lab6
-void free_history();                     //lab6
-void add_history(char *cmd_str);         //lab6
-int restore_history(cmdLine *pCmdLine);  //lab6
-void print_history();                    //lab6
+void general_command(cmdLine *pCmdLine);                      //lab7
+void redirect_io(cmdLine *pCmdLine);                          //lab7
+void general_command_pipe(cmdLine *mainCmd, cmdLine *secCmd); //lab7
+int execute(cmdLine *mainCmd, cmdLine *secCmd, char pipe_f);  //lab7
+void free_history();                                          //lab6
+void add_history(char *cmd_str);                              //lab6
+int restore_history(cmdLine *pCmdLine);                       //lab6
+void print_history();                                         //lab6
 // -----------------------
 
-int main(int argc, char **argv) //lab6
+int main(int argc, char **argv) //lab7
 {
     char cwd[PATH_MAX];
+    char pipe_f = 0; // lab7 - pipe flag
     while (TRUE)
     {
         // print current working directory
@@ -55,34 +58,43 @@ int main(int argc, char **argv) //lab6
         }
         if (strlen(input) == 0) // redundant input
             continue;
-        mainCmd = parseCmdLines(input);
-        int need_history_change = execute(mainCmd);
-        if (need_history_change) // doesn't add special case !X to history
+
+        char *first_input = strtok(input, "|"); //lab7
+        char *sec_input = strtok(NULL, "|");    //lab7
+        pipe_f = (sec_input) ? 1 : 0;           //lab7
+
+        mainCmd = parseCmdLines(first_input);
+        if (pipe_f)
+            secCmd = parseCmdLines(sec_input);                      //lab7
+        int need_history_change = execute(mainCmd, secCmd, pipe_f); //lab7
+        if (need_history_change)                                    // not special case !X -> add to history
             add_history(input);
         freeCmdLines(mainCmd);
+        if (pipe_f)
+            freeCmdLines(secCmd);
     }
     return 0;
 }
 
-int execute(cmdLine *pCmdLine) //lab6
+int execute(cmdLine *mainCmd, cmdLine *secCmd, char pipe_f) //lab7
 {
     // check if first char of first argument is '!'
-    if (pCmdLine->arguments[0][0] == 33)
+    if (mainCmd->arguments[0][0] == 33)
     {
-        return restore_history(pCmdLine);
+        return restore_history(mainCmd);
     }
 
     // cd function
-    if (strcmp(pCmdLine->arguments[0], "cd") == 0)
+    if (strcmp(mainCmd->arguments[0], "cd") == 0)
     {
         char err = 1;
-        if (pCmdLine->argCount == 1)
+        if (mainCmd->argCount == 1)
         {
             err = chdir(getenv("HOME"));
         }
-        else if (pCmdLine->argCount == 2)
+        else if (mainCmd->argCount == 2)
         {
-            err = chdir(pCmdLine->arguments[1]);
+            err = chdir(mainCmd->arguments[1]);
         }
         if (err)
             fprintf(stderr, "ERROR: Unknown direcrtory\n");
@@ -90,17 +102,68 @@ int execute(cmdLine *pCmdLine) //lab6
     }
 
     // history function
-    if (strcmp(pCmdLine->arguments[0], "history") == 0)
+    if (strcmp(mainCmd->arguments[0], "history") == 0)
     {
         print_history();
         return ADD_HISTORY;
     }
-
-    general_command(pCmdLine);
+    if (pipe_f) //lab7
+        general_command_pipe(mainCmd, secCmd);
+    else
+        general_command(mainCmd);
     return ADD_HISTORY;
 }
 
-void general_command(cmdLine *pCmdLine) //lab7
+void general_command_pipe(cmdLine *mainCmd, cmdLine *secCmd) //lab7
+{
+    int file_dec[2];
+    pid_t child1_pid, child2_pid;
+
+    if (pipe(file_dec) == -1) // STEP 1 - create a pipe
+    {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+    if ((child1_pid = fork()) == -1) // STEP 2 - Fork to a child process (child1).
+    {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    if (child1_pid == 0) // STEP 3 - child 1 - output ls -l to pipe
+    {
+        close(1);                                          // Close the standard output.
+        dup(file_dec[1]);                                  // Duplicate the write-end of the pipe
+        close(file_dec[1]);                                // Close the file descriptor that was duplicated
+        execvp(mainCmd->arguments[0], mainCmd->arguments); // Execute "ls -l".
+        _exit(0);                                          // returns if failed
+    }
+    else // parent
+    {
+        close(file_dec[1]); // STEP 4 - Parent Close the write end of the pipe
+
+        if ((child2_pid = fork()) == -1) // STEP 5 - Fork again to a child process (child2).
+        {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        }
+        if (child2_pid == 0) // STEP 6 - child 2 - get input for pipe and perform tail
+        {
+            close(0);                                        // Child close the standard input.
+            dup(file_dec[0]);                                // Duplicate the read-end of the pipe
+            close(file_dec[0]);                              // Close the file descriptor that was duplicated
+            execvp(secCmd->arguments[0], secCmd->arguments); // Execute "tail -n 2".
+            _exit(0);
+        }
+        else //parent
+        {
+            close(file_dec[0]);           // STEP 7 - Parent close the read end of the pipe.
+            waitpid(child1_pid, NULL, 0); // STEP 8 - wait for child1
+            waitpid(child2_pid, NULL, 0); // STEP 8 - wait for child2
+        }
+    }
+}
+
+void general_command(cmdLine *pCmdLine) //lab7 - task1
 {
     // general function - non shell
     if ((pid = fork()) == -1)
@@ -108,7 +171,7 @@ void general_command(cmdLine *pCmdLine) //lab7
 
     else if (pid == 0)
     {                          // code executed by child
-        redirect_io(pCmdLine); // LAB 7!!
+        redirect_io(pCmdLine); // //lab7 - task1
         // execute
         execvp(pCmdLine->arguments[0], pCmdLine->arguments);
 
@@ -129,7 +192,7 @@ void general_command(cmdLine *pCmdLine) //lab7
     }
 }
 
-void redirect_io(cmdLine *pCmdLine) // lab7
+void redirect_io(cmdLine *pCmdLine) //lab7 - task1
 {
     int fd;
     if (pCmdLine->inputRedirect)
@@ -209,7 +272,7 @@ int restore_history(cmdLine *pCmdLine) // lab6
     char *cmd_str = h_array[real_array_index];
 
     cmdLine *cmd = parseCmdLines(cmd_str);
-    execute(cmd);
+    execute(cmd, NULL, FALSE);
     freeCmdLines(cmd);
 
     /*  For edge case when '!X' command will enter the same
