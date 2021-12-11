@@ -35,6 +35,7 @@ int restore_history(cmdLine *pCmdLine);                          //lab7
 void free_history();                                             //lab6
 void add_history(char *cmd_str);                                 //lab6
 void print_history();                                            //lab6
+int cd_case(cmdLine *pCmdLine);                                  //lab6
 // -----------------------
 
 int main(int argc, char **argv) //lab7
@@ -89,20 +90,7 @@ int execute(cmdLine *first_cmd, cmdLine *sec_cmd, char pipe_f) //lab7
 
     // cd function
     if (strcmp(first_cmd->arguments[0], "cd") == 0)
-    {
-        char err = 1;
-        if (first_cmd->argCount == 1)
-        {
-            err = chdir(getenv("HOME"));
-        }
-        else if (first_cmd->argCount == 2)
-        {
-            err = chdir(first_cmd->arguments[1]);
-        }
-        if (err)
-            fprintf(stderr, "ERROR: Unknown direcrtory\n");
-        return ADD_HISTORY;
-    }
+        return cd_case(first_cmd);
 
     // history function
     if (strcmp(first_cmd->arguments[0], "history") == 0)
@@ -325,4 +313,23 @@ void print_history() // lab6
         h_curr_pointer %= HISTORY_SIZE;
         h_command_index++;
     }
+}
+
+int cd_case(cmdLine *pCmdLine)
+{
+    char err = 1;
+
+    if (pCmdLine->argCount == 1)
+    {
+        err = chdir(getenv("HOME"));
+    }
+    else if (pCmdLine->argCount == 2)
+    {
+        err = chdir(pCmdLine->arguments[1]);
+    }
+
+    if (err)
+        fprintf(stderr, "ERROR: Unknown direcrtory\n");
+
+    return ADD_HISTORY;
 }
