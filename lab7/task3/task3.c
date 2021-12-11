@@ -17,8 +17,9 @@
 // -----------------------
 
 // ---  global variables ----
-cmdLine *secCmd;             // lab7
-cmdLine *mainCmd;            // lab6
+char *all_input;             // lab7 - save for memory release
+cmdLine *secCmd;             // lab7 - save for memory release
+cmdLine *mainCmd;            // lab6 - save for memory release
 pid_t pid;                   // lab6
 char *h_array[HISTORY_SIZE]; // lab6 - History list of commands
 int h_count = 0;             // lab6 - Number of total commands
@@ -59,18 +60,19 @@ int main(int argc, char **argv) //lab7
         if (strlen(input) == 0) // redundant input
             continue;
 
-        char *all_input = strdup(input);        //lab7
-        char *first_input = strtok(input, "|"); //lab7
-        char *sec_input = strtok(NULL, "|");    //lab7
-        pipe_f = (sec_input) ? 1 : 0;           //lab7
+        all_input = strdup(input);                  //lab7
+        char *first_input = strtok(all_input, "|"); //lab7
+        char *sec_input = strtok(NULL, "|");        //lab7
+        pipe_f = (sec_input) ? 1 : 0;               //lab7
 
-        mainCmd = parseCmdLines(first_input); //lab7
-        if (pipe_f)
+        mainCmd = parseCmdLines(first_input);                       //lab7
+        if (pipe_f)                                                 //lab7
             secCmd = parseCmdLines(sec_input);                      //lab7
         int need_history_change = execute(mainCmd, secCmd, pipe_f); //lab7
         if (need_history_change)                                    // not special case !X -> add to history
-            add_history(all_input);
+            add_history(input);
         freeCmdLines(mainCmd);
+        free(all_input);          //lab7
         if (pipe_f)               //lab7
             freeCmdLines(secCmd); //lab7
     }
@@ -134,16 +136,17 @@ int restore_history(cmdLine *pCmdLine) // lab7
     int real_array_index = restored_command_index % HISTORY_SIZE;
     char *cmd_str = h_array[real_array_index]; //lab7
 
-    char *all_input = strdup(cmd_str);        //lab7
-    char *first_input = strtok(cmd_str, "|"); //lab7
-    char *sec_input = strtok(NULL, "|");      //lab7
-    char pipe_f = (sec_input) ? 1 : 0;        //lab7
-    cmdLine *first_cmd = NULL;                //lab7
-    cmdLine *sec_cmd = NULL;                  //lab7
+    char *input = strdup(cmd_str);          //lab7
+    char *first_input = strtok(input, "|"); //lab7
+    char *sec_input = strtok(NULL, "|");    //lab7
+    char pipe_f = (sec_input) ? 1 : 0;      //lab7
+    cmdLine *first_cmd = NULL;              //lab7
+    cmdLine *sec_cmd = NULL;                //lab7
 
     first_cmd = parseCmdLines(first_input); //lab7
     if (pipe_f)                             //lab7
-        secCmd = parseCmdLines(sec_input);  //lab7
+        sec_cmd = parseCmdLines(sec_input); //lab7
+    free(input);                            //lab7
     execute(first_cmd, sec_cmd, pipe_f);    //lab7
     freeCmdLines(first_cmd);                //lab7
     freeCmdLines(sec_cmd);                  //lab7
@@ -156,7 +159,7 @@ int restore_history(cmdLine *pCmdLine) // lab7
                 the '!X' command.
                 That way, if you call a restored function that
                 not in the array anymore, it won't fail. */
-        add_history(all_input);
+        add_history(cmd_str);
     }
     else
     {
@@ -186,13 +189,16 @@ void general_command_pipe(cmdLine *first_cmd, cmdLine *sec_cmd) //lab7
     }
     if (child1_pid == 0) // STEP 3 - child 1 - output ls -l to pipe
     {
-        close(1);                                              // Close the standard output.
-        dup(file_dec[1]);                                      // Duplicate the write-end of the pipe
-        close(file_dec[1]);                                    // Close the file descriptor that was duplicated
+        close(1);           // Close the standard output.
+        dup(file_dec[1]);   // Duplicate the write-end of the pipe
+        close(file_dec[1]); // Close the file descriptor that was duplicated
+        redirect_io(first_cmd);
         execvp(first_cmd->arguments[0], first_cmd->arguments); // Execute "ls -l".
         // free all memory and exit
         free_history();
+        free(all_input);
         freeCmdLines(first_cmd);
+        freeCmdLines(sec_cmd);
         if (mainCmd != first_cmd) // free original !X call
             freeCmdLines(mainCmd);
         _exit(0);
@@ -208,12 +214,14 @@ void general_command_pipe(cmdLine *first_cmd, cmdLine *sec_cmd) //lab7
         }
         if (child2_pid == 0) // STEP 6 - child 2 - get input for pipe and perform tail
         {
-            close(0);                                          // Child close the standard input.
-            dup(file_dec[0]);                                  // Duplicate the read-end of the pipe
-            close(file_dec[0]);                                // Close the file descriptor that was duplicated
+            close(0);           // Child close the standard input.
+            dup(file_dec[0]);   // Duplicate the read-end of the pipe
+            close(file_dec[0]); // Close the file descriptor that was duplicated
+            redirect_io(sec_cmd);
             execvp(sec_cmd->arguments[0], sec_cmd->arguments); // Execute "tail -n 2".
                                                                // free all memory and exit
             free_history();
+            free(all_input);
             freeCmdLines(first_cmd);
             freeCmdLines(sec_cmd);
             if (mainCmd != first_cmd) // free original !X call
@@ -246,6 +254,7 @@ void general_command(cmdLine *pCmdLine) //lab7 - task1
 
         // free all memory and exit
         free_history();
+        free(all_input);
         if (pCmdLine)
             freeCmdLines(pCmdLine);
         if (mainCmd != pCmdLine)
