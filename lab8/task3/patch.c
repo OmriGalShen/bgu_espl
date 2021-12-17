@@ -7,46 +7,45 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(int argc, char *argv[])
-{
-    int src_fd, des_fd;
+int main(int argc, char **argv){
+
+    int sfd, dfd;
+    char *src, *dest;
+
 
     if (argc != 6)
     {
         fprintf(stderr, "usage: ./patch source_file source_pos size dest_file dest_pos");
         return 1;
     }
-    // -----------Parse command line input-----------
-    if ((src_fd = open(argv[1], O_RDONLY)) < 0)
+
+    if ((sfd = open(argv[1], O_RDONLY)) < 0)
     {
         fprintf(stderr, "source_file open failed");
         return 1;
     }
-    size_t src_file_size = lseek(src_fd, 0, SEEK_END);
-    // size_t src_pos = atoi(argv[2]);
-    int src_pos = (int)strtol(argv[2], NULL, 16);
+    size_t src_pos = (int)strtol(argv[2], NULL, 16);
     size_t copy_size = atoi(argv[3]);
-    if ((des_fd = open(argv[4], O_RDWR | O_CREAT, 0666)) < 0)
+    if ((dfd = open(argv[4], O_RDWR, 0666)) < 0)
     {
         fprintf(stderr, "dest_file open failed");
         return 1;
     }
-    size_t des_file_size = lseek(des_fd, 0, SEEK_END);
-    // size_t dest_pos = atoi(argv[5]);
-    int dest_pos = (int)strtol(argv[5], NULL, 16);
-    // ----------------------------------------------
-    char *src_map = mmap(NULL, src_file_size, PROT_READ, MAP_PRIVATE, src_fd, 0);
-    char *des_map = mmap(NULL, des_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, des_fd, 0);
+    size_t dest_pos = (int)strtol(argv[5], NULL, 16);
 
-    printf("addr1:%x, addr2:%x\n",src_pos,dest_pos);
+    size_t src_file_size = lseek(sfd, 0, SEEK_END);
+    size_t des_file_size = lseek(dfd, 0, SEEK_END);
+    
+    src = mmap(NULL, src_file_size, PROT_READ, MAP_PRIVATE, sfd, 0);
+    dest = mmap(NULL, des_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, dfd, 0);
 
-    memcpy(src_map + src_pos, des_map + dest_pos, copy_size);
+    memcpy(dest+dest_pos, src+src_pos, copy_size);
 
-    munmap(src_map, src_file_size);
-    munmap(des_map, des_file_size);
+    munmap(src, src_file_size);
+    munmap(dest, des_file_size);
 
-    close(src_fd);
-    close(des_fd);
+    close(sfd);
+    close(dfd);
 
     return 0;
 }
