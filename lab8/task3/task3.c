@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 int fib(int limit)
 {
@@ -10,10 +11,14 @@ int fib(int limit)
         a = b;
         b += temp;
     }
-    printf("\n");
+    printf("\n\nAsta la vista baby!\n\n");
 }
 
 int main(int argc, char **argv)
 {
-    fib(33);
+    if(argc != 2)
+    {
+        printf("Usage: fib <limit>");
+    }
+    fib(atoi(argv[1]));
 }

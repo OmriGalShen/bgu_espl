@@ -1,0 +1,4 @@
+fib in task3 = 000005bd = 1469
+.text address = 00000480 = 1152
+size of fib in task3 = 86
+fib in fibonacci = 0000065d = 1629
