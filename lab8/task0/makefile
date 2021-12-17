@@ -1,10 +1,10 @@
 all:examine
 
-examine: examine.o
-	gcc -m32 -o examine examine.o
+examine: task0.o
+	gcc -m32 -o examine task0.o
 
-examine.o: examine.c
-	gcc -c -m32 -o examine.o examine.c
+task0.o: task0.c
+	gcc -c -m32 -o task0.o task0.c
 
 .PHONY: clean
 
