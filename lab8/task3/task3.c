@@ -3,20 +3,15 @@
 
 int fib(int limit)
 {
-    int a = 1, b = 1, temp;
-    while (a <= limit)
-    {
-        printf("%d ", a);
-        temp = a;
-        a = b;
-        b += temp;
-    }
-    printf("\n\nAsta la vista baby!\n\n");
+    int a = 1;
+    int b = 1;
+    int c = a + b;
+    return 20;
 }
 
 int main(int argc, char **argv)
 {
-    if(argc != 2)
+    if (argc != 2)
     {
         printf("Usage: fib <limit>");
     }

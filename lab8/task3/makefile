@@ -13,7 +13,7 @@ task3.o: task3.c
 	gcc -c -m32 -fno-pie -o task3.o task3.c
 
 run: patch task3
-	./patch task3 0000057d 122 fibonacci 0000065d
+	./patch task3 56d 122 fibonacci 65d
 	./fibonacci 33
 
 .PHONY: clean
