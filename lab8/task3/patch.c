@@ -12,7 +12,6 @@ int main(int argc, char **argv){
     int sfd, dfd;
     char *src, *dest;
 
-
     if (argc != 6)
     {
         fprintf(stderr, "usage: ./patch source_file source_pos size dest_file dest_pos");

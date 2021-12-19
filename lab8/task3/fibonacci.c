@@ -9,14 +9,16 @@ void printer(int num)
 int fib(int limit)
 {
     int a = 0, b = 1, temp = -1;
-    while (a <= limit)
+    char flag = 0;
+    for (int i = 0; i < limit; i++)
     {
+        flag = 1;
         printer(a);
         temp = a;
         a = b;
         b += temp;
     }
-    return temp;
+    return flag ? a : -1;
 }
 
 int main(int argc, char **argv)
