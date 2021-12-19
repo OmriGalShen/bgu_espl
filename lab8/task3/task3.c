@@ -3,9 +3,7 @@
 
 int fib(int limit)
 {
-    int a = 1;
-    int b = 1;
-    int c = a + b;
+    printf("hey");
     return 20;
 }
 
