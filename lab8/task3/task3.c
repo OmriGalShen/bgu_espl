@@ -1,17 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void printer(int num)
-{
-    printf("%d ", num);
-}
 
 int fib(int limit)
 {
     int a = 0, b = 1, temp = 1, last_a = -1, i;
 
     while (a<=limit) {
-        printer(a);
         last_a = a;
         temp += a;
         a = b;

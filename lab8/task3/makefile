@@ -19,7 +19,7 @@ fibonacci.o: fibonacci.c
 	gcc -c -m32 -fno-pie -o fibonacci.o fibonacci.c
 
 run: patch task3
-	./patch task3 679 119 fibonacci 679
+	./patch task3 64d 105 fibonacci 64d
 	./fibonacci 33
 
 read1: 
