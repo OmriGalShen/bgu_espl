@@ -34,18 +34,17 @@ int main(int argc, char *argv[])
 
     Elf32_Shdr *section_header = (Elf32_Shdr *)(map_start + header->e_shoff);
     int num_of_sections = header->e_shnum;
-    Elf32_Shdr *sh_strtab = &section_header[header->e_shstrndx];
-    const char *const sh_strtab_p = map_start + (sh_strtab)->sh_offset;
+    const char *const sh_strtab = map_start + (&section_header[header->e_shstrndx])->sh_offset;
 
     printf("[Nr] Name                 Addr     Off      Size\n");
     for (int i = 0; i < num_of_sections; ++i)
     {
-        const char *section_name = sh_strtab_p + section_header[i].sh_name;
+        const char *section_name = sh_strtab + section_header[i].sh_name;
         Elf32_Addr addr = section_header[i].sh_addr;
         Elf32_Off offset = section_header[i].sh_offset;
         Elf32_Word size = section_header[i].sh_size;
-        printf("[%-2d] %-20s %08x %08x %08x\n", i,
-               section_name, addr, offset, size);
+        printf("[%-2d] %-20s %08x %08x %08x\n",
+               i,section_name, addr, offset, size);
     }
 
     close(fd);
