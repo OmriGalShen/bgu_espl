@@ -1,0 +1,19 @@
+Margaery	memory:0.5|general:1
+Tyrion	general:1|memory:0.7
+Ramsay	general:0.5|memory:1
+Kate	general:0.2|memory:0.5
+Daenerys	
+Brienne	termination:1
+Stark	security:1
+Jon	memory:0.5|termination:0.7
+Hodor	general:1
+Lannister	general:1|termination:0.5|memory:0.5|small_bugs:1|security:0.5
+Snow	general:0.7|memory:1|termination:0.5
+Arya	memory:1
+Shae	general:1|memory:1|security:0.5
+Drogo	memory:1
+Robert	general:1|memory:1|termination:1
+Sansa	memory:0.5|general:1
+Cersi	general:0.6|memory:1
+Theon	general:1|termination:0.5|security:1|memory:0.5|big_file:1
+Jaime	termination:1|SQS_Visibility:1|security:1
