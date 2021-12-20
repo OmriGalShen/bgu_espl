@@ -42,12 +42,12 @@ int main(int argc, char *argv[])
         if (section_header[i].sh_type == SHT_SYMTAB)
         {
             Elf32_Sym *symtab = (Elf32_Sym *)(map_start + section_header[i].sh_offset);
-            int symbol_num = section_header[i].sh_size / section_header[i].sh_entsize;
+            int num_of_symbols = section_header[i].sh_size / section_header[i].sh_entsize;
             char *symbol_names = (char *)(map_start + section_header[section_header[i].sh_link].sh_offset);
-            for (int j = 0; j < symbol_num; j++)
+            for (int j = 0; j < num_of_symbols; j++)
             {
-                char *symbol_name = symbol_names + symtab[j].st_name;
                 char *section_name = section_names + section_header[i].sh_name;
+                char *symbol_name = symbol_names + symtab[j].st_name;
                 printf("%-2d:     %08x   %-12d  %-13s %s\n",
                        index,
                        symtab[j].st_value,
