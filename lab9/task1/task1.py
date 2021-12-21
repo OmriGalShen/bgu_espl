@@ -1,13 +1,16 @@
 import csv
 import sys
+import numpy as np
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 
-def num_movies_by_countries(input, output):
+def num_movies_by_countries(input_file, output_file):
     """Calculate the number of movies that have been presented in each country ( Note, that
     movie can be presented in more than one country ) and output it to movies.stats in the
     following format: country_name|number_of_movies.
     """
-    with open(input, "r") as infile, open(output, "w") as outfile:
+    with open(input_file, "r") as infile, open(output_file, "w") as outfile:
         country_dic = {}
         file_reader = csv.reader(infile)
         for row in list(file_reader)[1:]:  # skip first line
@@ -20,28 +23,65 @@ def num_movies_by_countries(input, output):
             outfile.write("%s:%s\n" % (key, value))
 
 
-def num_of_movies(input, country, year):
+def num_of_movies(input_file, country, year):
     """Calculate the number of movies presented in a
     specific country that is released after a
     specific date."""
     counter = 0
-    with open(input, "r") as infile:
+    with open(input_file, "r") as infile:
         file_reader = csv.reader(infile)
         for row in list(file_reader)[1:]:  # skip first line
             curr_country = row[-1]
             curr_year = int(row[2])
             if curr_country == country and year <= curr_year:
                 counter += 1
-    print("Number of movies in {} after {}: {}".format(country,year,counter))
+    print("Number of movies in {} after {}: {}".format(country, year, counter))
+
+
+def print_histogram(input_file):
+    """Draw a histogram of the number of movies presented each year, see this page."""
+    with open(input_file, "r") as infile:
+        file_list = list(csv.reader(infile))[1:]
+        year_list = [int(item[2]) for item in file_list]
+        all_years = list(range(min(year_list), max(year_list)+1))
+        all_years_count = [year_list.count(year) for year in all_years]
+        x = all_years
+        num_bins = max(year_list)-min(year_list)+1
+        n, bins, patches = plt.hist(x, num_bins, facecolor="blue", alpha=0.5)
+        plt.show()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python task1.py <file.csv> <output_file>")
+    if len(sys.argv) != 2:
+        print("Usage: python task1.py <file.csv>")
         sys.exit()
-    input = sys.argv[1]
-    output = sys.argv[2]
-    num_movies_by_countries(input, output)
-    country = raw_input("Enter country name(i.e USA): ")
-    year = int(raw_input("Enter release year(i.e 1917): "))
-    num_of_movies(input, country, year)
+    input_file = sys.argv[1]
+    while True:
+        print()
+        print("-------Task 1 Menu------------")
+        print("1.Get movies by countries")
+        print("2.Get number of movies")
+        print("3.Print histogram")
+        print("4.Quit")
+        print("-------------------------------")
+        print()
+        choise = int(input("Enter action: "))
+        if choise == 1:
+            output_file = input("Enter output file (movies.stats):")
+            num_movies_by_countries(input_file, output_file)
+            input("Press Enter to continue")
+        elif choise == 2:
+            country = input("Enter country name(i.e USA): ")
+            year = int(input("Enter release year(i.e 1917): "))
+            num_of_movies(input_file, country, year)
+            input("Press Enter to continue")
+            continue
+        elif choise == 3:
+            print_histogram(input_file)
+            input("Press Enter to continue")
+            continue
+        elif choise == 4:
+            sys.exit()
+        else:
+            print("Invalid choise")
+            continue

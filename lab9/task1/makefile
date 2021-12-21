@@ -1,2 +1,2 @@
 run: task1.py
-	python task1.py IMDB.csv movies.stats
+	python3 task1.py IMDB.csv
