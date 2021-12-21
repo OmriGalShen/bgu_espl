@@ -1,7 +1,5 @@
 import csv
 import sys
-import numpy as np
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 
 
@@ -43,11 +41,8 @@ def print_histogram(input_file):
     with open(input_file, "r") as infile:
         file_list = list(csv.reader(infile))[1:]
         year_list = [int(item[2]) for item in file_list]
-        all_years = list(range(min(year_list), max(year_list)+1))
-        all_years_count = [year_list.count(year) for year in all_years]
-        x = all_years
         num_bins = max(year_list)-min(year_list)+1
-        n, bins, patches = plt.hist(x, num_bins, facecolor="blue", alpha=0.5)
+        n, bins, patches = plt.hist(year_list, num_bins, facecolor="blue", alpha=0.5)
         plt.show()
 
 
