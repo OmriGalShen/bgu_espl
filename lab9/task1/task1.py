@@ -1,6 +1,9 @@
 import csv
 import sys
 import matplotlib.pyplot as plt
+import os
+
+clear = lambda: os.system('clear')
 
 
 def num_movies_by_countries(input_file, output_file):
@@ -9,9 +12,9 @@ def num_movies_by_countries(input_file, output_file):
     following format: country_name|number_of_movies.
     """
     with open(input_file, "r") as infile, open(output_file, "w") as outfile:
+        file_list = list(csv.reader(infile))[1:] # skip first line
         country_dic = {}
-        file_reader = csv.reader(infile)
-        for row in list(file_reader)[1:]:  # skip first line
+        for row in file_list:  
             country = row[-1]
             if country in country_dic:
                 country_dic[country] += 1
@@ -27,8 +30,8 @@ def num_of_movies(input_file, country, year):
     specific date."""
     counter = 0
     with open(input_file, "r") as infile:
-        file_reader = csv.reader(infile)
-        for row in list(file_reader)[1:]:  # skip first line
+        file_list = list(csv.reader(infile))[1:] # skip first line
+        for row in file_list:  
             curr_country = row[-1]
             curr_year = int(row[2])
             if curr_country == country and year <= curr_year:
@@ -39,7 +42,7 @@ def num_of_movies(input_file, country, year):
 def print_histogram(input_file):
     """Draw a histogram of the number of movies presented each year, see this page."""
     with open(input_file, "r") as infile:
-        file_list = list(csv.reader(infile))[1:]
+        file_list = list(csv.reader(infile))[1:] # skip first line
         year_list = [int(item[2]) for item in file_list]
         num_bins = max(year_list)-min(year_list)+1
         n, bins, patches = plt.hist(year_list, num_bins, facecolor="blue", alpha=0.5)
@@ -52,6 +55,7 @@ if __name__ == "__main__":
         sys.exit()
     input_file = sys.argv[1]
     while True:
+        clear()
         print()
         print("-------Task 1 Menu------------")
         print("1.Get movies by countries")
@@ -62,21 +66,23 @@ if __name__ == "__main__":
         print()
         choise = int(input("Enter action: "))
         if choise == 1:
-            output_file = input("Enter output file (movies.stats):")
+            output_file = input("Enter output file (movies.stats): ")
             num_movies_by_countries(input_file, output_file)
-            input("Press Enter to continue")
+            print("Results stored in:",output_file)
+            input("Press Enter to continue\n")
         elif choise == 2:
             country = input("Enter country name(i.e USA): ")
             year = int(input("Enter release year(i.e 1917): "))
             num_of_movies(input_file, country, year)
-            input("Press Enter to continue")
+            input("Press Enter to continue\n")
             continue
         elif choise == 3:
             print_histogram(input_file)
-            input("Press Enter to continue")
+            input("Press Enter to continue\n")
             continue
         elif choise == 4:
             sys.exit()
         else:
             print("Invalid choise")
+            input("Press Enter to continue\n")
             continue
