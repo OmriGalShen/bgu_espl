@@ -15,13 +15,14 @@ def num_movies_by_countries(input_file, output_file):
         file_list = list(csv.reader(infile))[1:] # skip first line
         country_dic = {}
         for row in file_list:  
-            country = row[-1]
-            if country in country_dic:
-                country_dic[country] += 1
-            else:
-                country_dic[country] = 1
+            countries = str(row[5]).split(', ')
+            for country in countries:
+                if country in country_dic:
+                    country_dic[country] += 1
+                else:
+                    country_dic[country] = 1
         for key, value in country_dic.items():
-            outfile.write("%s:%s\n" % (key, value))
+            outfile.write("%s|%s\n" % (key, value))
 
 
 def num_of_movies(input_file, country, year):
