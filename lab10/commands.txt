@@ -1,0 +1,11 @@
+new user
+
+remove user
+
+connect to group
+
+disconnect from group
+
+send message to user
+
+send message to group
