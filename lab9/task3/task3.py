@@ -3,9 +3,7 @@ import csv
 import sys
 import matplotlib.pyplot as plt
 from tkinter import messagebox
-from tkinter import ttk
 from tkinter import simpledialog
-
 
 def num_movies_by_countries(input_file, output_file):  # task1a
     """Calculate the number of movies that have been presented in each country ( Note, that
@@ -23,7 +21,7 @@ def num_movies_by_countries(input_file, output_file):  # task1a
                 else:
                     country_dic[country] = 1
         for key, value in country_dic.items():
-            outfile.write("%s|%s\n" % (key, value))
+            outfile.write(f"{key}|{value}\n")
 
 
 def num_of_movies(input_file, country, year):  # task1b
@@ -39,8 +37,7 @@ def num_of_movies(input_file, country, year):  # task1b
             for curr_country in countries:
                 if curr_country == country and year <= curr_year:
                     movie_counter += 1
-    msg = "Number of movies in {} after {}: {}".format(
-        country, year, movie_counter)
+    msg = f"Number of movies in {country} after {year}: {movie_counter}"
     messagebox.showinfo(message=msg)
 
 
@@ -74,7 +71,7 @@ def total_duration(input_file, output_file):  # task2a
                     genre_dic[genre] = [1, curr_duration]  # new genre
         for key, value in genre_dic.items():
             avg_duration = value[1]/value[0]  # avrage = total duration / count
-            outfile.write("%s|%f\n" % (key, avg_duration))
+            outfile.write(f"{key}|{avg_duration}\n")
 
 
 def num_of_movies_in_genre(input_file, country):  # task2b
@@ -95,7 +92,7 @@ def num_of_movies_in_genre(input_file, country):  # task2b
                         genre_dic[genre] = 1  # new genre
     msg = "number of movies for each genre:\n"
     for key, value in genre_dic.items():
-        msg += "%s|%d\n" % (key, value)
+        msg += f"{key}|{value}\n"
     messagebox.showinfo(message=msg)
 
 

@@ -37,7 +37,7 @@ def num_movies_by_countries(input_file, output_file):  # task1a
                 else:
                     country_dic[country] = 1
         for key, value in country_dic.items():
-            outfile.write("%s|%s\n" % (key, value))
+            outfile.write(f"{key}|{value}\n")
 
 
 def num_of_movies(input_file, country, year):  # task1b
@@ -54,8 +54,7 @@ def num_of_movies(input_file, country, year):  # task1b
                 if curr_country == country and year <= curr_year:
                     movie_counter += 1
 
-    print("Number of movies in {} after {}: {}".format(
-        country, year, movie_counter))
+    print(f"Number of movies in {country} after {year}: {movie_counter}")
 
 
 def print_histogram(input_file):  # task1c
@@ -64,8 +63,7 @@ def print_histogram(input_file):  # task1c
         file_list = list(csv.reader(infile))[1:]  # skip first line
         year_list = [int(item[2]) for item in file_list]
         num_bins = max(year_list)-min(year_list)+1
-        n, bins, patches = plt.hist(
-            year_list, num_bins, facecolor="blue", alpha=0.5)
+        plt.hist(year_list, num_bins, facecolor="blue", alpha=0.5)
         plt.show()
 
 
@@ -87,7 +85,7 @@ def total_duration(input_file, output_file):  # task2a
                     genre_dic[genre] = [1, curr_duration]  # new genre
         for key, value in genre_dic.items():
             avg_duration = value[1]/value[0] # avrage = total duration / count
-            outfile.write("%s|%f\n" % (key, avg_duration))
+            outfile.write(f"{key}|{avg_duration}\n")
 
 
 def num_of_movies_in_genre(input_file, country):  # task2b
@@ -108,7 +106,7 @@ def num_of_movies_in_genre(input_file, country):  # task2b
                         genre_dic[genre] = 1  # new genre
     print("number of movies for each genre:")
     for key, value in genre_dic.items():
-        print("%s|%d" % (key, value))
+        print(f"{key}|{value}")
 
 
 if __name__ == "__main__":
