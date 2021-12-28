@@ -34,7 +34,7 @@ def run_server(host):
     database = create_connection(DATABASE_NAME)
     cur = database.cursor()
     create_tables(database, cur)
-    # host = socket.gethostbyname(socket.gethostname())
+    # host_ip = socket.gethostbyname(socket.gethostname())
     port = DEFAULT_PORT
     print('server hosting on IP-> ' + str(host))
     udp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)

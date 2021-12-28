@@ -30,7 +30,7 @@ def RunServer(host):
     cur.execute('''CREATE TABLE IF NOT EXISTS groups
                (group_name text, user_addr INTEGER)''')
     data_base.commit()
-    #host = socket.gethostbyname(socket.gethostname())
+    #host_ip = socket.gethostbyname(socket.gethostname())
     port = 5000
     print('server hosting on IP-> '+str(host))
     UDPServerSocket = socket.socket(family=socket.AF_INET,type=socket.SOCK_DGRAM)
