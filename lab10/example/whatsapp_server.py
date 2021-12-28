@@ -16,7 +16,7 @@ bufferSize = 1024
 
 
 
-#Server Code
+#server Code
 def RecvData(sock,recvPackets):
     while True:
         data,addr = sock.recvfrom(bufferSize)
@@ -32,12 +32,12 @@ def RunServer(host):
     data_base.commit()
     #host = socket.gethostbyname(socket.gethostname())
     port = 5000
-    print('Server hosting on IP-> '+str(host))
+    print('server hosting on IP-> '+str(host))
     UDPServerSocket = socket.socket(family=socket.AF_INET,type=socket.SOCK_DGRAM)
     UDPServerSocket.bind((host,port))
     recvPackets = queue.Queue()
 
-    print('Server Running...')
+    print('server Running...')
 
     threading.Thread(target=RecvData,args=(UDPServerSocket,recvPackets)).start()
 
