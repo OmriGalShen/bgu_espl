@@ -74,7 +74,7 @@ def RunClient(serverIP):
             # data = input()
         elif request == 'qqq':
             break
-    # UDPClientSocket.sendto(data.encode('utf-8'),server)
+    # udp_client_socket.sendto(data.encode('utf-8'),server)
     UDPClientSocket.close()
     os._exit(1)
 

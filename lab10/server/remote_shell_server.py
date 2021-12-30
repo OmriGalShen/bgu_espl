@@ -50,8 +50,8 @@ def create_connection(db_file):
 
 
 def is_logged_in(cur, host, port):
-    rows = cur.execute("SELECT id FROM users WHERE host = ? AND port=port",
-                       (host, port), ).fetchall()
+    rows = cur.execute("SELECT id FROM users WHERE host = ? AND port=?",
+                       (host, port)).fetchall()
     if rows:
         return True
     return False
@@ -130,7 +130,8 @@ def run_server(host):
                         curr_host = row[0]
                         curr_port = row[1]
                         curr_address = (curr_host, curr_port)
-                        udp_server_socket.sendto(cmd_to_share, curr_address)
+                        if client_host != curr_host and client_port != curr_port:
+                            udp_server_socket.sendto(cmd_to_share, curr_address)
 
     udp_server_socket.close()
     database.close()

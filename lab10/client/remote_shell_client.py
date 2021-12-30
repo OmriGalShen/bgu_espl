@@ -1,4 +1,3 @@
-import os
 import random
 import socket
 import subprocess
@@ -6,7 +5,10 @@ import sys
 import threading
 from functools import wraps
 from pathlib import Path, PurePath
-import time
+from typing import Optional
+
+from client.network_helper import *
+
 
 # To run on linux:
 # mount private 192.168.56.1:500:/Server
@@ -16,8 +18,6 @@ import time
 # mount shared 192.168.56.1:500:Server
 # mount private 192.168.56.1:500:Server
 # cd 192.168.56.1:500:Server
-BUFFER_SIZE = 1 << 10
-shared_shell_listening = False
 
 
 class ServerInfo:
@@ -33,6 +33,15 @@ class ServerInfo:
         return self.host_ip, self.port
 
 
+shared_shell_listening = False
+display_path = os.getcwd()
+is_mounted = False
+is_shared_shell = False
+server: Optional[ServerInfo] = None
+udp_client_socket = None
+is_client_shell = True
+
+
 def blocking_shared_shell(func):
     """used to decorate function  which received data from server
     in order to prevent losing data to shared command thread"""
@@ -40,77 +49,18 @@ def blocking_shared_shell(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         global shared_shell_listening
-        temp = shared_shell_listening
         shared_shell_listening = False
         result = func(*args, **kwargs)
-        shared_shell_listening = temp
+        shared_shell_listening = True
         return result
 
     return wrapper
 
 
-@blocking_shared_shell
-def remote_login(sock):
-    data = "0"  # msg type 0 = remote_login
-    sock.sendto(data.encode('utf-8'), mounted_server.get_address())
-    status, _ = sock.recvfrom(BUFFER_SIZE)
-    status = status.decode('utf-8')  # '0' = failed '1' successful
-    return status == '1'
-
-
-def remote_logout(sock):
-    data = "1"  # msg type 1 = remote_logout
-    sock.sendto(data.encode('utf-8'), mounted_server.get_address())
-
-
-@blocking_shared_shell
-def valid_remote_path(sock, path):
-    data = f"2 {path}"  # msg type 2 = valid_remote_path
-    sock.sendto(data.encode('utf-8'), mounted_server.get_address())
-    status, _ = sock.recvfrom(BUFFER_SIZE)
-    status = status.decode('utf-8')  # '0' = failed '1' successful
-    return status == '1'
-
-
-@blocking_shared_shell
-def run_remote_cmd(sock, cmd, path):
-    data = f"3 {path} {cmd}"  # msg type 3 = run_remote_cmd
-    sock.sendto(data.encode('utf-8'), mounted_server.get_address())
-    res, _ = sock.recvfrom(BUFFER_SIZE)
-    res = res.decode('utf-8')
-    return res
-
-
-@blocking_shared_shell
-def remote_copy_file(sock, remote_file_path, local_path, file_name):
-    data = f"4 {remote_file_path}"  # msg type 4 = remote_copy_file
-    sock.sendto(data.encode('utf-8'), mounted_server.get_address())
-    status, _ = sock.recvfrom(BUFFER_SIZE)
-    status = status.decode('utf-8')  # '0' = failed '1' successful
-    if status == '1':
-        local_file_path = os.path.normpath(os.path.join(local_path, file_name))
-        f = open(local_file_path, 'wb')
-        data, _ = sock.recvfrom(BUFFER_SIZE)
-        try:
-            while data:
-                f.write(data)
-                sock.settimeout(2)
-                data, _ = sock.recvfrom(BUFFER_SIZE)
-        except socket.timeout:
-            f.close()
-    else:
-        print('Error: invalid remote file')
-
-
-def share_cmd(sock, cmd):
-    data = f"5 {cmd}"  # share_cmd
-    sock.sendto(data.encode('utf-8'), mounted_server.get_address())
-
-
-def cd_on_client():
+def cd_on_client(path):
     try:
-        os.chdir(cd_path)
-    except:
+        os.chdir(path)
+    except OSError:
         print('Error changing directory on client')
     return os.getcwd()
 
@@ -120,111 +70,111 @@ def is_child_path(parent, child):
 
 
 def shared_shell_receive_loop(sock):
-    global shared_shell_listening
+    global shared_shell_listening, is_shared_shell
     while True:
-        if shared_shell_listening:
+        if shared_shell_listening and is_shared_shell:
             data, _ = sock.recvfrom(BUFFER_SIZE)
             data = data.decode('utf-8')
-            cmd = data.split(' ')
+            execute_command(data)
+
+
+def execute_command(cmd):
+    global is_shared_shell, is_client_shell, server, is_mounted
+    global shared_shell_listening, display_path, udp_client_socket
+    sock = udp_client_socket
+
+    cmd_lst = cmd.split(' ')
+    if cmd == 'quit' or cmd == 'exit':  # exit condition
+        if is_shared_shell:
+            remote_logout(sock, server.get_address())
+        sys.exit()
+
+    if is_client_shell:
+        if len(cmd_lst) == 3 and cmd_lst[0] == 'mount' \
+                and cmd_lst[1] == 'private':  # mount private host:port:path
+            server = ServerInfo(*cmd_lst[2].split(':'))  # host_ip:port:path
+            if valid_remote_path(sock, server.get_address(), server.base_path) is True:
+                is_mounted = True
+            else:
+                server = None
+                is_mounted = False
+                print('Invalid remote remote shell')
+            return
+
+        if len(cmd_lst) == 3 and cmd_lst[0] == 'mount' \
+                and cmd_lst[1] == 'shared':  # mount private host:port:path
+            server = ServerInfo(*cmd_lst[2].split(':'))  # host_ip:port:path
+            if valid_remote_path(sock, server.get_address(), server.base_path) is True:
+                if remote_login(sock, server.get_address()) is True:
+                    is_mounted = True
+                    is_shared_shell = True
+                    shared_shell_listening = True
+                    threading.Thread(target=shared_shell_receive_loop, args=(sock,)).start()
+                    return
+            server = None
+            is_mounted = False
+            print('Error: invalid remote shell')
+            return
+
+        elif cmd_lst[0] == 'cd' and len(cmd_lst) == 2:  # cd command on client
+            cd_path = cmd_lst[1]
+            cd_path_lst = cd_path.split(':')
+            if is_mounted and len(cd_path_lst) == 3:  # cd host:port:path
+                cd_server = ServerInfo(*cd_path_lst)
+                if cd_server == server:
+                    is_client_shell = False  # switch to remote shell
+                    display_path = server.base_path
+                else:
+                    print("Invalid Command - Use 'mount private host:port:path' first to mount remote shell")
+            else:  # normal client cd
+                display_path = cd_on_client(cd_path)
+            return
+
+        else:  # normal client terminal command
             print(subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout)
-        else:  # wait for blocking to release
-            time.sleep(0.5)
+            return
+
+    else:  # remote shell
+        if is_shared_shell:
+            share_cmd(sock, server.get_address(), cmd)
+
+        if len(cmd_lst) == 2 and cmd_lst[0] == 'cd':
+            cd_path = cmd_lst[1]
+            remote_path = os.path.normpath(os.path.join(display_path, cd_path))
+            if is_child_path(server.base_path, remote_path):
+                if valid_remote_path(sock, server.get_address(), remote_path):
+                    display_path = remote_path  # Update display path with valid remote path
+                else:
+                    print('Error changing directory on remote shell')
+            else:  # cd outside of remote
+                is_client_shell = True
+                display_path = cd_on_client(cd_path)
+            return
+
+        elif len(cmd_lst) == 3 and cmd_lst[0] == 'cp':  # example: cp a.txt cwd
+            filename = cmd_lst[1]
+            path_local = '.' if cmd_lst[2] == 'cwd' else cmd_lst[2]
+            file_path_remote = os.path.normpath(os.path.join(display_path, filename))
+            remote_copy_file(sock, server.get_address(), file_path_remote, path_local, filename)
+            return
+
+        else:  # normal remote shell command
+            print(run_remote_cmd(sock, server.get_address(), cmd, display_path))
+            return
+
+
+def open_socket():
+    global udp_client_socket
+    client_ip = socket.gethostbyname(socket.gethostname())
+    client_port = random.randint(6000, 10000)
+    udp_client_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    udp_client_socket.bind((client_ip, client_port))
+    return udp_client_socket
 
 
 if __name__ == '__main__':
-    is_mounted = False
-    is_shared_shell = False
-    mounted_server = None
-    is_client_shell = True
-
-    # Open socket
-    client_ip = socket.gethostbyname(socket.gethostname())
-    client_port = random.randint(6000, 10000)
-    UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-    UDPClientSocket.bind((client_ip, client_port))
-
-    display_path = os.getcwd()  # update with cwd
-
+    open_socket()
     while True:
         print(f"{display_path}$ ", end='')
-        user_input = input()
-        input_lst = user_input.split(' ')
-
-        if user_input == 'quit' or user_input == 'exit':  # exit condition
-            if is_shared_shell:
-                remote_logout(UDPClientSocket)
-            sys.exit()
-
-        if is_client_shell:
-
-            if len(input_lst) == 3 and input_lst[0] == 'mount' \
-                    and input_lst[1] == 'private':  # mount private host:port:path
-                mounted_server = ServerInfo(*input_lst[2].split(':'))  # host_ip:port:path
-                if valid_remote_path(UDPClientSocket, mounted_server.base_path) is True:
-                    is_mounted = True
-                else:
-                    mounted_server = None
-                    is_mounted = False
-                    print('Invalid remote remote shell')
-                continue
-
-            if len(input_lst) == 3 and input_lst[0] == 'mount' \
-                    and input_lst[1] == 'shared':  # mount private host:port:path
-                mounted_server = ServerInfo(*input_lst[2].split(':'))  # host_ip:port:path
-                if valid_remote_path(UDPClientSocket, mounted_server.base_path) is True:
-                    if remote_login(UDPClientSocket) is True:
-                        is_mounted = True
-                        is_shared_shell = True
-                        shared_shell_listening = True
-                        print("client_port:" + str(client_port))
-                        threading.Thread(target=shared_shell_receive_loop, args=(UDPClientSocket,)).start()
-                        continue
-                mounted_server = None
-                is_mounted = False
-                print('Error: invalid remote shell')
-                continue
-
-            elif input_lst[0] == 'cd' and len(input_lst) == 2:  # cd command on client
-                cd_path = input_lst[1]
-                cd_path_lst = cd_path.split(':')
-                if is_mounted and len(cd_path_lst) == 3:  # cd host:port:path
-                    cd_server = ServerInfo(*cd_path_lst)
-                    if cd_server == mounted_server:
-                        is_client_shell = False  # switch to remote terminal
-                        display_path = mounted_server.base_path
-                    else:
-                        print("Invalid Command - Use 'mount private host:port:path' first to mount remote shell")
-                else:  # normal client cd
-                    display_path = cd_on_client()
-                continue
-
-            else:  # normal client terminal command
-                if is_shared_shell:
-                    share_cmd(UDPClientSocket, user_input)
-                print(subprocess.run(user_input, capture_output=True, text=True, shell=True).stdout)
-                continue
-
-        else:  # remote terminal
-            if len(input_lst) == 2 and input_lst[0] == 'cd':
-                cd_path = input_lst[1]
-                remote_path = os.path.normpath(os.path.join(display_path, cd_path))
-                if is_child_path(mounted_server.base_path, remote_path):
-                    if valid_remote_path(UDPClientSocket, remote_path):
-                        display_path = remote_path  # Update display path with valid remote path
-                    else:
-                        print('Error changing directory on remote shell')
-                else:  # cd outside of remote
-                    is_client_shell = True
-                    display_path = cd_on_client()
-                continue
-
-            elif len(input_lst) == 3 and input_lst[0] == 'cp':  # example: cp a.txt cwd
-                filename = input_lst[1]
-                path_local = '.' if input_lst[2] == 'cwd' else input_lst[2]
-                file_path_remote = os.path.normpath(os.path.join(display_path, filename))
-                remote_copy_file(UDPClientSocket, file_path_remote, path_local, filename)
-                continue
-
-            else:  # normal remote terminal command
-                print(run_remote_cmd(UDPClientSocket, user_input, display_path))
-                continue
+        user_cmd = input()
+        execute_command(user_cmd)
