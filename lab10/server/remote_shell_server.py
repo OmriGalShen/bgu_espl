@@ -15,7 +15,7 @@ from sqlite3 import Error
 BUFFER_SIZE = 1 << 10
 DEFAULT_IP = '192.168.56.1'
 DEFAULT_PORT = 500
-DATABASE_NAME = r"remote_data.db"
+DATABASE_NAME = r"remote_shell.db"
 
 
 # server Code
@@ -27,9 +27,9 @@ def receive_data(sock, packet_queue):
 
 def create_tables(database, cur):
     cur.execute('''CREATE TABLE IF NOT EXISTS users
-               (user_name text, user_id INTEGER, adrr INTEGER)''')
-    cur.execute('''CREATE TABLE IF NOT EXISTS groups
-               (group_name text, user_addr INTEGER)''')
+               (id INTEGER PRIMARY KEY AUTOINCREMENT, host TEXT NOT NULL, port INTEGER)''')
+    # cur.execute('''CREATE TABLE IF NOT EXISTS groups
+    #            (group_name text, user_addr INTEGER)''')
     database.commit()
 
 
@@ -49,6 +49,14 @@ def create_connection(db_file):
     return conn
 
 
+def is_logged_in(cur, host, port):
+    rows = cur.execute("SELECT id FROM users WHERE host = ? AND port=port",
+                       (host, port), ).fetchall()
+    if rows:
+        return True
+    return False
+
+
 def run_server(host):
     database = create_connection(DATABASE_NAME)
     cur = database.cursor()
@@ -64,30 +72,43 @@ def run_server(host):
     threading.Thread(target=receive_data, args=(udp_server_socket, packet_queue)).start()
     while True:
         while not packet_queue.empty():
-            data, (msg_address, msg_port) = packet_queue.get()
-            client_address = (msg_address, msg_port)
+            data, client_address = packet_queue.get()
+            client_host, client_port = client_address
+            client_port = int(client_port)
             data = data.decode('utf-8')
             data = list(data.split(" "))
-            msg_type = data[0]
+            msg_type = int(data[0])
 
-            if msg_type == '0':  # valid_remote_path
+            if msg_type == 0:  # remote_login
+                try:
+                    cur.execute("INSERT INTO users(host, port) VALUES(?,?)", (client_host, client_port))
+                    database.commit()
+                    status = "1".encode('utf-8')
+                except sqlite3.Error:
+                    status = "0".encode('utf-8')
+                udp_server_socket.sendto(status, client_address)
+
+            if msg_type == 1:  # remote_logout
+                cur.execute("DELETE FROM users WHERE host=? AND port=?",
+                            (client_host, client_port))
+                database.commit()
+
+            if msg_type == 2:  # valid_remote_path
                 msg_path = data[1]
-                print('path got:' + msg_path)
                 if os.path.isdir(msg_path):
-                    response = "1"
+                    status = "1".encode('utf-8')
                 else:
-                    response = "0"
-                response = response.encode('utf-8')
-                udp_server_socket.sendto(response, client_address)
+                    status = "0".encode('utf-8')
+                udp_server_socket.sendto(status, client_address)
 
-            elif msg_type == '1':  # run_remote_cmd
+            elif msg_type == 3:  # run_remote_cmd
                 msg_path = data[1]
                 msg_cmd = ' '.join(data[2:])
                 response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=msg_path).stdout
                 response = response.encode('utf-8')
                 udp_server_socket.sendto(response, client_address)
 
-            elif msg_type == '2':  # remote_copy_file
+            elif msg_type == 4:  # remote_copy_file
                 file_name = data[1]
                 if os.path.isfile(file_name):
                     status = '1'.encode('utf-8')
@@ -101,11 +122,18 @@ def run_server(host):
                     status = '0'.encode('utf-8')
                     udp_server_socket.sendto(status, client_address)
 
+            elif msg_type == 5:  # share_cmd
+                cmd_to_share = ' '.join(data[1:]).encode('utf-8')
+                if is_logged_in(cur, client_host, client_port):  # send cmd to every one who is logged in
+                    rows = cur.execute("SELECT host,port FROM users").fetchall()
+                    for row in rows:
+                        curr_host = row[0]
+                        curr_port = row[1]
+                        curr_address = (curr_host, curr_port)
+                        udp_server_socket.sendto(cmd_to_share, curr_address)
+
     udp_server_socket.close()
     database.close()
-
-
-# Serevr Code Ends Here
 
 
 if __name__ == '__main__':
