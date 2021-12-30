@@ -115,6 +115,7 @@ if __name__ == '__main__':
                     else:
                         print('Error changing directory on remote shell')
                 else:  # cd outside of remote
+                    client_terminal = True
                     display_path = cd_on_client()
                 continue
 
