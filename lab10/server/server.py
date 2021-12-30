@@ -5,6 +5,7 @@
 """
 import os
 import socket
+import subprocess
 import threading
 import queue
 import sys
@@ -12,6 +13,7 @@ import sqlite3
 from sqlite3 import Error
 
 BUFFER_SIZE = 1 << 10
+DEFAULT_IP = '192.168.56.1'
 DEFAULT_PORT = 500
 DATABASE_NAME = r"remote_data.db"
 
@@ -68,23 +70,25 @@ def run_server(host):
             data = list(data.split(" "))
             msg_type = data[0]
 
-            if msg_type == '0':  # new user
+            if msg_type == '0':  # valid_remote_path
                 msg_path = data[1]
-                full_path = os.path.join(os.getcwd(), msg_path)
-                response = f"{full_path}$ ".encode('utf-8')
+                print('path got:' + msg_path)
+                if os.path.isdir(msg_path):
+                    response = "1"
+                else:
+                    response = "0"
+                response = response.encode('utf-8')
                 udp_server_socket.sendto(response, full_address)
 
-            elif msg_type == '1':  # remove user
-                cur.execute("DELETE FROM users WHERE adrr = ?", (msg_port,))
-                database.commit()
-                response = "SERVER: Done"
-                udp_server_socket.sendto(response.encode('utf-8'), full_address)
+            elif msg_type == '1':  # run_remote_cmd
+                msg_path = data[1]
+                msg_cmd = ' '.join(data[2:])
+                response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=msg_path).stdout
+                response = response.encode('utf-8')
+                udp_server_socket.sendto(response, full_address)
 
             elif msg_type == '2':  # cd command
-                cur.execute("DELETE FROM users WHERE adrr = ?", (msg_port,))
-                database.commit()
-                response = "SERVER: Done"
-                udp_server_socket.sendto(response.encode('utf-8'), full_address)
+                pass
 
     udp_server_socket.close()
     database.close()
