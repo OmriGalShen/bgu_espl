@@ -8,22 +8,18 @@ from pathlib import Path, PurePath
 
 from client.network_helper import *
 
-# To run on linux:
-# mount private 192.168.56.1:500:/Server
+# How to run
+# mount shared 192.168.56.1:500:/Server | mount private 192.168.56.1:500:/Server
 # cd 192.168.56.1:500:/Server
 
-# To run on both windows and linux:
-# mount shared 192.168.56.1:500:Server
-# mount private 192.168.56.1:500:Server
-# cd 192.168.56.1:500:Server
-
 display_path = os.getcwd()  # global for use of 2 threads
-shared_shell_lock = threading.Lock()
-shared_shell_blocking: bool = False  # global for use of 2 threads
+shared_shell_lock = threading.Lock()  # used to synchronize shared shell
 
 
 class ServerInfo:
     def __init__(self, host_ip, port, base_path):
+        if base_path[0] == '/':
+            base_path = base_path[1:]
         self.base_path = base_path
         self.port = int(port)
         self.host_ip = host_ip
@@ -55,7 +51,7 @@ def shared_shell_receive_loop(client_sock):
         if len(cmd_output) > 0:
             print(cmd_output)
         shared_shell_lock.release()
-        time.sleep(1)
+        time.sleep(1)  # enough time for main thread to catch lock
 
 
 if __name__ == '__main__':
@@ -91,7 +87,7 @@ if __name__ == '__main__':
                     print('Invalid remote remote shell')
                 continue
 
-            if len(cmd_lst) == 3 and cmd_lst[0] == 'mount' \
+            elif len(cmd_lst) == 3 and cmd_lst[0] == 'mount' \
                     and cmd_lst[1] == 'shared':  # mount private host:port:path
                 server = ServerInfo(*cmd_lst[2].split(':'))  # host_ip:port:path
                 is_mounted = True
@@ -114,6 +110,7 @@ if __name__ == '__main__':
                             if cd_server == server:
                                 is_client_shell = False  # switch to remote shell
                                 display_path = server.base_path
+                            continue
                     else:
                         print("Invalid Command - Use 'mount private host:port:path' first to mount remote shell")
                 else:  # normal client cd
@@ -131,7 +128,7 @@ if __name__ == '__main__':
         else:  # remote shell
             if is_shared_shell:  # shared remote shell
                 run_remote_shared_cmd(sock, server.get_address(), cmd)
-                shared_shell_lock.acquire()
+                shared_shell_lock.acquire()  # wait for remote shared shell response
                 shared_shell_lock.release()
                 continue
 
@@ -144,7 +141,7 @@ if __name__ == '__main__':
                             display_path = remote_path  # Update display path with valid remote path
                         else:
                             print('Error changing directory on remote shell')
-                    else:  # cd outside of remote
+                    else:  # cd outside of remote shell
                         is_client_shell = True
                         try:
                             os.chdir(cd_path)

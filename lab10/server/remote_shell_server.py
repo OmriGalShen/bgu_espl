@@ -110,10 +110,9 @@ def run_server(host):
                 msg_path = data[1]
                 parent_dir = pathlib.Path(__file__).parent.resolve()
                 local_path = os.path.normpath(os.path.join(parent_dir, msg_path))
-                msg_cmd = ' '.join(data[2:])
+                print("HELLO: " + local_path)
+                msg_cmd = data[2:]
                 print('in run_remote_cmd')
-                print("msg_path:" + msg_path)
-                print("msg_cmd:" + msg_cmd)
                 response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=local_path).stdout
                 print("response:" + response)
                 response = response.encode('utf-8')
@@ -157,7 +156,7 @@ def run_server(host):
                     if cd_cmd:
                         sec_msg = ""
                     else:
-                        sec_msg = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
+                        sec_msg = subprocess.run(cmd.split(' '), capture_output=True, text=True, shell=True).stdout
                     print('sec_msg:' + sec_msg)
                     sec_msg = sec_msg.encode('utf-8')
 
@@ -166,8 +165,8 @@ def run_server(host):
                         client_address = (row[0], int(row[1]))
                         udp_server_socket.sendto(first_msg, client_address)
                         udp_server_socket.sendto(sec_msg, client_address)
-    # udp_server_socket.close()
-    # database.close()
+    udp_server_socket.close()
+    database.close()
 
 
 if __name__ == '__main__':
