@@ -17,9 +17,9 @@ from client.network_helper import *
 # mount private 192.168.56.1:500:Server
 # cd 192.168.56.1:500:Server
 
-shared_shell_blocking: bool = False  # global for use of 2 threads
 display_path = os.getcwd()  # global for use of 2 threads
 shared_shell_lock = threading.Lock()
+shared_shell_blocking: bool = False  # global for use of 2 threads
 
 
 class ServerInfo:
@@ -40,24 +40,22 @@ def is_child_path(parent, child):
 
 
 def shared_shell_receive_loop(client_sock):
-    global shared_shell_blocking, display_path
+    global display_path, shared_shell_lock
     while True:
-        shared_shell_blocking = True
-
+        shared_shell_lock.acquire()
         res, _ = client_sock.recvfrom(BUFFER_SIZE)
         res = res.decode('utf-8').split(' ')
         rem_path = res[0]
         rem_cmd = ' '.join(res[1:])
         display_path = rem_path
-        print(f"{rem_path}$ {rem_cmd}")
+        print()
+        print(f"/{rem_path}$ {rem_cmd}")
         res, _ = client_sock.recvfrom(BUFFER_SIZE)
         cmd_output = res.decode('utf-8')
         if len(cmd_output) > 0:
             print(cmd_output)
-
-        shared_shell_blocking = False
-
-        print("release ")
+        shared_shell_lock.release()
+        time.sleep(1)
 
 
 if __name__ == '__main__':
@@ -72,7 +70,7 @@ if __name__ == '__main__':
     sock.bind((client_host, client_port))
 
     while True:
-        print(f"{display_path}$ ", end='')
+        print(f"/{display_path}$ ", end='')
         cmd = input()
 
         cmd_lst = cmd.split(' ')
@@ -133,9 +131,8 @@ if __name__ == '__main__':
         else:  # remote shell
             if is_shared_shell:  # shared remote shell
                 run_remote_shared_cmd(sock, server.get_address(), cmd)
-                shared_shell_blocking = True
-                while shared_shell_blocking:
-                    time.sleep(0.5)
+                shared_shell_lock.acquire()
+                shared_shell_lock.release()
                 continue
 
             else:  # private remote shell

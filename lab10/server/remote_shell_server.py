@@ -145,15 +145,19 @@ def run_server(host):
 
             elif msg_type == 6:  # run_remote_shared_cmd
                 cmd = ' '.join(data[1:])
+                cd_cmd = data[1] == 'cd'
                 if is_logged_in(cur, client_host, client_port):
-
+                    if cd_cmd:
+                        os.chdir(data[2])
                     parent_dir = pathlib.Path(__file__).parent.resolve()
                     rel_path = os.path.relpath(os.getcwd(), start=parent_dir)
                     first_msg = f"{rel_path} {cmd}"
                     print('first_msg:' + first_msg)
                     first_msg = first_msg.encode('utf-8')
-
-                    sec_msg = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
+                    if cd_cmd:
+                        sec_msg = ""
+                    else:
+                        sec_msg = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
                     print('sec_msg:' + sec_msg)
                     sec_msg = sec_msg.encode('utf-8')
 
@@ -162,7 +166,6 @@ def run_server(host):
                         client_address = (row[0], int(row[1]))
                         udp_server_socket.sendto(first_msg, client_address)
                         udp_server_socket.sendto(sec_msg, client_address)
-
     # udp_server_socket.close()
     # database.close()
 
