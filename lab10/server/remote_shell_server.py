@@ -68,6 +68,8 @@ def run_server(host):
     udp_server_socket.bind((host, port))
     packet_queue = queue.Queue()
 
+    os.chdir('Server')  # initial directory
+
     print('server Running...')
 
     threading.Thread(target=receive_data, args=(udp_server_socket, packet_queue)).start()
@@ -96,7 +98,9 @@ def run_server(host):
 
             if msg_type == 2:  # valid_remote_path
                 msg_path = data[1]
-                if os.path.isdir(msg_path):
+                parent_dir = pathlib.Path(__file__).parent.resolve()
+                local_path = os.path.normpath(os.path.join(parent_dir, msg_path))
+                if os.path.isdir(local_path):
                     status = "1".encode('utf-8')
                 else:
                     status = "0".encode('utf-8')
@@ -104,22 +108,27 @@ def run_server(host):
 
             elif msg_type == 3:  # run_remote_cmd
                 msg_path = data[1]
+                parent_dir = pathlib.Path(__file__).parent.resolve()
+                local_path = os.path.normpath(os.path.join(parent_dir, msg_path))
                 msg_cmd = ' '.join(data[2:])
                 print('in run_remote_cmd')
                 print("msg_path:" + msg_path)
                 print("msg_cmd:" + msg_cmd)
-                response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=msg_path).stdout
+                response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=local_path).stdout
                 print("response:" + response)
                 response = response.encode('utf-8')
                 udp_server_socket.sendto(response, client_address)
                 print('done run_remote_cmd')
 
             elif msg_type == 4:  # remote_copy_file
-                file_name = data[1]
-                if os.path.isfile(file_name):
+                remote_file_path = data[1]
+                parent_dir = pathlib.Path(__file__).parent.resolve()
+                local_file_path = os.path.normpath(os.path.join(parent_dir, remote_file_path))
+
+                if os.path.isfile(local_file_path):
                     status = '1'.encode('utf-8')
                     udp_server_socket.sendto(status, client_address)
-                    f = open(file_name, "rb")
+                    f = open(local_file_path, "rb")
                     data = f.read(BUFFER_SIZE)
                     while data:
                         if udp_server_socket.sendto(data, client_address):
@@ -136,24 +145,28 @@ def run_server(host):
 
             elif msg_type == 6:  # run_remote_shared_cmd
                 cmd = ' '.join(data[1:])
-                print('in run_remote_shared_cmd')
-                print(cmd)
-                if is_logged_in(cur, client_host, client_port):  # send cmd to every one who is logged in
-                    cwd = os.getcwd()
-                    response = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
-                    response = response.encode('utf-8')
+                if is_logged_in(cur, client_host, client_port):
+
+                    parent_dir = pathlib.Path(__file__).parent.resolve()
+                    rel_path = os.path.relpath(os.getcwd(), start=parent_dir)
+                    first_msg = f"{rel_path} {cmd}"
+                    print('first_msg:' + first_msg)
+                    first_msg = first_msg.encode('utf-8')
+
+                    sec_msg = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
+                    print('sec_msg:' + sec_msg)
+                    sec_msg = sec_msg.encode('utf-8')
+
                     rows = cur.execute("SELECT host,port FROM users").fetchall()
                     for row in rows:
-                        curr_host = row[0]
-                        curr_port = int(row[1]) + 1
-                        client_address = (curr_host, curr_port)  # port with socket which listen to shared shell
-                        udp_server_socket.sendto(response, client_address)
+                        client_address = (row[0], int(row[1]))
+                        udp_server_socket.sendto(first_msg, client_address)
+                        udp_server_socket.sendto(sec_msg, client_address)
 
-    udp_server_socket.close()
-    database.close()
+    # udp_server_socket.close()
+    # database.close()
 
 
 if __name__ == '__main__':
     server_ip = sys.argv[1]
-    os.chdir('Server')
     run_server(server_ip)
