@@ -1,7 +1,8 @@
 import os
+import pathlib
 
 if __name__ == '__main__':
-    local_path = '.\Server'
-    filename = 'banana'
-    local_file_path = os.path.normpath(os.path.join(local_path, filename))
-    f = open(local_file_path, 'wb')
+    os.chdir('Server')
+    # parent_dir = pathlib.Path(__file__).parent.resolve()
+    # rel_path = os.path.relpath(os.getcwd(), start=parent)
+    print(os.getcwd())

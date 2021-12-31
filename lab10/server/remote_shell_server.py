@@ -4,6 +4,7 @@
 @author: Omri and Pan
 """
 import os
+import pathlib
 import socket
 import subprocess
 import threading
@@ -104,9 +105,14 @@ def run_server(host):
             elif msg_type == 3:  # run_remote_cmd
                 msg_path = data[1]
                 msg_cmd = ' '.join(data[2:])
+                print('in run_remote_cmd')
+                print("msg_path:" + msg_path)
+                print("msg_cmd:" + msg_cmd)
                 response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=msg_path).stdout
+                print("response:" + response)
                 response = response.encode('utf-8')
                 udp_server_socket.sendto(response, client_address)
+                print('done run_remote_cmd')
 
             elif msg_type == 4:  # remote_copy_file
                 file_name = data[1]
@@ -122,16 +128,26 @@ def run_server(host):
                     status = '0'.encode('utf-8')
                     udp_server_socket.sendto(status, client_address)
 
-            elif msg_type == 5:  # share_cmd
-                cmd_to_share = ' '.join(data[1:]).encode('utf-8')
+            elif msg_type == 5:  # get_remote_path
+                parent_dir = pathlib.Path(__file__).parent.resolve()
+                rel_path = os.path.relpath(os.getcwd(), start=parent_dir)
+                rel_path = rel_path.encode('utf-8')
+                udp_server_socket.sendto(rel_path, client_address)
+
+            elif msg_type == 6:  # run_remote_shared_cmd
+                cmd = ' '.join(data[1:])
+                print('in run_remote_shared_cmd')
+                print(cmd)
                 if is_logged_in(cur, client_host, client_port):  # send cmd to every one who is logged in
+                    cwd = os.getcwd()
+                    response = subprocess.run(cmd, capture_output=True, text=True, shell=True).stdout
+                    response = response.encode('utf-8')
                     rows = cur.execute("SELECT host,port FROM users").fetchall()
                     for row in rows:
                         curr_host = row[0]
-                        curr_port = row[1]
-                        curr_address = (curr_host, curr_port)
-                        if client_host != curr_host and client_port != curr_port:
-                            udp_server_socket.sendto(cmd_to_share, curr_address)
+                        curr_port = int(row[1]) + 1
+                        client_address = (curr_host, curr_port)  # port with socket which listen to shared shell
+                        udp_server_socket.sendto(response, client_address)
 
     udp_server_socket.close()
     database.close()
@@ -139,4 +155,5 @@ def run_server(host):
 
 if __name__ == '__main__':
     server_ip = sys.argv[1]
+    os.chdir('Server')
     run_server(server_ip)
