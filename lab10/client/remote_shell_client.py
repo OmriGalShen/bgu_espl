@@ -3,17 +3,14 @@ import socket
 import subprocess
 import sys
 import threading
-import time
 from pathlib import Path, PurePath
 
 from client.network_helper import *
 
+
 # How to run
 # mount shared 192.168.56.1:500:/Server | mount private 192.168.56.1:500:/Server
 # cd 192.168.56.1:500:/Server
-
-display_path = os.getcwd()  # global for use of 2 threads
-shared_shell_lock = threading.Lock()  # used to synchronize shared shell
 
 
 class ServerInfo:
@@ -36,23 +33,31 @@ def is_child_path(parent, child):
 
 
 def shared_shell_receive_loop(client_sock):
-    global display_path, shared_shell_lock
+    global display_path, send_shared_cmd
     while True:
-        shared_shell_lock.acquire()
         res, _ = client_sock.recvfrom(BUFFER_SIZE)
         res = res.decode('utf-8').split(' ')
         rem_path = res[0]
+        is_cd_cmd = res[1] == 'cd'
         rem_cmd = ' '.join(res[1:])
-        display_path = rem_path
-        print()
-        print(f"/{rem_path}$ {rem_cmd}")
+        old_path, new_path = display_path, rem_path
         res, _ = client_sock.recvfrom(BUFFER_SIZE)
         cmd_output = res.decode('utf-8')
-        if len(cmd_output) > 0:
-            print(cmd_output)
-        print(f"/{rem_path}$ ", end='')
-        shared_shell_lock.release()
-        time.sleep(1)  # enough time for main thread to catch lock
+
+        if not send_shared_cmd:  # received from another client
+            print(rem_cmd)
+            if len(cmd_output) > 0:
+                print()
+                print(cmd_output)
+            print(f"/{new_path}$ ", end='')
+        else:  # send from this client
+            if len(cmd_output) > 0:
+                print()
+                print(cmd_output)
+            print(f"/{new_path}$ ", end='')
+        display_path = new_path  # update path
+        send_shared_cmd = False
+        barrier.wait()
 
 
 if __name__ == '__main__':
@@ -60,6 +65,8 @@ if __name__ == '__main__':
     is_shared_shell = False
     server = None
     is_client_shell = True
+    send_shared_cmd = False
+    display_path = os.getcwd()
     is_display_path = True
 
     client_host = socket.gethostbyname(socket.gethostname())
@@ -67,11 +74,14 @@ if __name__ == '__main__':
     sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     sock.bind((client_host, client_port))
 
+    barrier = threading.Barrier(1)
+
     while True:
         if is_display_path:
             print(f"/{display_path}$ ", end='')
         is_display_path = True
         cmd = input()
+        barrier.reset()
 
         cmd_lst = cmd.split(' ')
         if cmd == 'quit' or cmd == 'exit':  # exit condition
@@ -131,10 +141,10 @@ if __name__ == '__main__':
 
         else:  # remote shell
             if is_shared_shell:  # shared remote shell
-                run_remote_shared_cmd(sock, server.get_address(), cmd)
-                shared_shell_lock.acquire()  # wait for remote shared shell response
-                shared_shell_lock.release()
+                send_shared_cmd = True
                 is_display_path = False
+                run_remote_shared_cmd(sock, server.get_address(), cmd)
+                barrier.wait()  # wait for remote shared shell response
                 continue
 
             else:  # private remote shell

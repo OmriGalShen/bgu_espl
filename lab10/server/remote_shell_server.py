@@ -110,14 +110,10 @@ def run_server(host):
                 msg_path = data[1]
                 parent_dir = pathlib.Path(__file__).parent.resolve()
                 local_path = os.path.normpath(os.path.join(parent_dir, msg_path))
-                print("HELLO: " + local_path)
                 msg_cmd = data[2:]
-                print('in run_remote_cmd')
                 response = subprocess.run(msg_cmd, capture_output=True, text=True, shell=True, cwd=local_path).stdout
-                print("response:" + response)
                 response = response.encode('utf-8')
                 udp_server_socket.sendto(response, client_address)
-                print('done run_remote_cmd')
 
             elif msg_type == 4:  # remote_copy_file
                 remote_file_path = data[1]
@@ -151,13 +147,11 @@ def run_server(host):
                     parent_dir = pathlib.Path(__file__).parent.resolve()
                     rel_path = os.path.relpath(os.getcwd(), start=parent_dir)
                     first_msg = f"{rel_path} {cmd}"
-                    print('first_msg:' + first_msg)
                     first_msg = first_msg.encode('utf-8')
                     if cd_cmd:
                         sec_msg = ""
                     else:
                         sec_msg = subprocess.run(cmd.split(' '), capture_output=True, text=True, shell=True).stdout
-                    print('sec_msg:' + sec_msg)
                     sec_msg = sec_msg.encode('utf-8')
 
                     rows = cur.execute("SELECT host,port FROM users").fetchall()
