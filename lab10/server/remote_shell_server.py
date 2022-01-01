@@ -171,4 +171,6 @@ def run_server(host):
 
 if __name__ == '__main__':
     server_ip = sys.argv[1]
+    if os.path.exists(DATABASE_NAME):
+        os.remove(DATABASE_NAME)
     run_server(server_ip)

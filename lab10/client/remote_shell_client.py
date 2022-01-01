@@ -50,6 +50,7 @@ def shared_shell_receive_loop(client_sock):
         cmd_output = res.decode('utf-8')
         if len(cmd_output) > 0:
             print(cmd_output)
+        print(f"/{rem_path}$ ", end='')
         shared_shell_lock.release()
         time.sleep(1)  # enough time for main thread to catch lock
 
@@ -59,6 +60,7 @@ if __name__ == '__main__':
     is_shared_shell = False
     server = None
     is_client_shell = True
+    is_display_path = True
 
     client_host = socket.gethostbyname(socket.gethostname())
     client_port = random.randint(6000, 10000)
@@ -66,7 +68,9 @@ if __name__ == '__main__':
     sock.bind((client_host, client_port))
 
     while True:
-        print(f"/{display_path}$ ", end='')
+        if is_display_path:
+            print(f"/{display_path}$ ", end='')
+        is_display_path = True
         cmd = input()
 
         cmd_lst = cmd.split(' ')
@@ -130,6 +134,7 @@ if __name__ == '__main__':
                 run_remote_shared_cmd(sock, server.get_address(), cmd)
                 shared_shell_lock.acquire()  # wait for remote shared shell response
                 shared_shell_lock.release()
+                is_display_path = False
                 continue
 
             else:  # private remote shell
